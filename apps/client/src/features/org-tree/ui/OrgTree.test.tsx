@@ -57,7 +57,12 @@ const isHidden = (name: string): boolean => rowOf(name).closest('[aria-hidden="t
 
 beforeEach(() => {
   treeUiStore.setState(() => ({ expanded: new Set(), initializedFor: null }));
-  dashboardStore.setState(() => ({ query: '', selectedId: null, view: 'table' }));
+  dashboardStore.setState(() => ({
+    keyboardPanel: 'table',
+    query: '',
+    selectedId: null,
+    view: 'table',
+  }));
 });
 
 describe('OrgTree', () => {
@@ -79,15 +84,51 @@ describe('OrgTree', () => {
     expect(isHidden('Облако')).toBe(false);
   });
 
-  it('повторный клик по строке сворачивает ветку', async () => {
+  it('повторный клик по строке не сворачивает ветку — клик не прячет данные', async () => {
     const user = userEvent.setup();
     renderTree();
 
     await user.click(screen.getByText('Инфраструктура'));
     await user.click(screen.getByText('Инфраструктура'));
 
+    expect(isOpen('Инфраструктура')).toBe(true);
+    expect(isHidden('Облако')).toBe(false);
+  });
+
+  it('клик по строке выделяет узел', async () => {
+    const user = userEvent.setup();
+    renderTree();
+
+    await user.click(screen.getByText('Инфраструктура'));
+
+    expect(dashboardStore.getState().selectedId).toBe('dep');
+    expect(rowOf('Инфраструктура')).toHaveAttribute('aria-selected', 'true');
+  });
+
+  it('свернуть ветку можно шевроном', async () => {
+    const user = userEvent.setup();
+    renderTree();
+
+    await user.click(screen.getByText('Инфраструктура'));
+    const chevron = within(rowOf('Инфраструктура')).getByRole('button', {
+      name: /свернуть инфраструктура/i,
+    });
+    await user.click(chevron);
+
     expect(isOpen('Инфраструктура')).toBe(false);
-    expect(isHidden('Облако')).toBe(true);
+  });
+
+  it('шеврон вне порядка табуляции: Tab не идёт через каждый узел', () => {
+    renderTree();
+
+    const chevrons = screen
+      .getAllByRole('treeitem')
+      .flatMap((item) => [...item.querySelectorAll(':scope > div button')]);
+
+    expect(chevrons.length).toBeGreaterThan(0);
+    for (const chevron of chevrons) {
+      expect(chevron).toHaveAttribute('tabindex', '-1');
+    }
   });
 
   it('клик по шеврону переключает ветку ровно один раз', async () => {
@@ -242,5 +283,51 @@ describe('OrgTree', () => {
     });
 
     expect(scrollIntoView).not.toHaveBeenCalled();
+  });
+
+  describe('выделение', () => {
+    it('повторный клик по выделенной строке снимает выделение', async () => {
+      const user = userEvent.setup();
+      renderTree();
+
+      await user.click(screen.getByText('Инфраструктура'));
+      expect(dashboardStore.getState().selectedId).toBe('dep');
+
+      await user.click(screen.getByText('Инфраструктура'));
+      expect(dashboardStore.getState().selectedId).toBeNull();
+    });
+
+    it('снятие выделения не сворачивает ветку', async () => {
+      const user = userEvent.setup();
+      renderTree();
+
+      await user.click(screen.getByText('Инфраструктура'));
+      await user.click(screen.getByText('Инфраструктура'));
+
+      expect(isOpen('Инфраструктура')).toBe(true);
+    });
+
+    it('Escape снимает выделение', async () => {
+      const user = userEvent.setup();
+      renderTree();
+
+      await user.click(screen.getByText('Инфраструктура'));
+      rowOf('Инфраструктура').focus();
+      await user.keyboard('{Escape}');
+
+      expect(dashboardStore.getState().selectedId).toBeNull();
+    });
+
+    it('Enter тоже переключает выделение', async () => {
+      const user = userEvent.setup();
+      renderTree();
+
+      rowOf('Инфраструктура').focus();
+      await user.keyboard('{Enter}');
+      expect(dashboardStore.getState().selectedId).toBe('dep');
+
+      await user.keyboard('{Enter}');
+      expect(dashboardStore.getState().selectedId).toBeNull();
+    });
   });
 });

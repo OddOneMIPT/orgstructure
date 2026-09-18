@@ -2,6 +2,7 @@ export {
   collapseAll,
   expandAll,
   expandAncestors,
+  expandNode,
   initializeExpanded,
   toggleNode,
   treeUiStore,

@@ -6,7 +6,13 @@ import styled from 'styled-components';
 
 import { isVisible, type FilteredView, type OrgModel, type OrgNodeId } from '@/entities/org';
 import { useRovingFocus } from '@/shared/lib/useRovingFocus';
-import { selectNode, useQuery, useSelectedId } from '@/shared/model/dashboardStore';
+import {
+  claimKeyboard,
+  selectNode,
+  toggleNode as toggleSelection,
+  useQuery,
+  useSelectedId,
+} from '@/shared/model/dashboardStore';
 import { Button, Panel, StateMessage } from '@/shared/ui';
 
 import {
@@ -77,6 +83,8 @@ const Root = styled.ul`
 export interface OrgTreeProps {
   model: OrgModel;
   view: FilteredView;
+  /** Этой панели достаются стрелки, когда фокуса нет ни на чём. */
+  claimsArrows?: boolean;
 }
 
 /** Дети узла, которые сейчас на экране. */
@@ -112,7 +120,7 @@ function flattenVisible(
   return result;
 }
 
-export function OrgTree({ model, view }: OrgTreeProps) {
+export function OrgTree({ model, view, claimsArrows = false }: OrgTreeProps) {
   const expandedCount = useExpandedCount();
   const expandedIds = useStore(treeUiStore, (state) => state.expanded);
   const selectedId = useSelectedId();
@@ -149,7 +157,11 @@ export function OrgTree({ model, view }: OrgTreeProps) {
   const roving = useRovingFocus({
     ids: visibleIds,
     containerRef: scrollRef,
-    onActivate: selectNode,
+    onActivate: toggleSelection,
+    onEscape: () => {
+      selectNode(null);
+    },
+    claimArrows: claimsArrows,
     onKey: (id, event) => {
       const key = event.key;
       const children = childrenVisibleIn(model, view, id);
@@ -211,7 +223,13 @@ export function OrgTree({ model, view }: OrgTreeProps) {
 
   return (
     <OrgTreeContext.Provider value={context}>
-      <TreePanel aria-label="Дерево орг-структуры" ref={treeRef}>
+      <TreePanel
+        aria-label="Дерево орг-структуры"
+        ref={treeRef}
+        onPointerDown={() => {
+          claimKeyboard('tree');
+        }}
+      >
         <Header>
           <Title>Дерево орг-структуры</Title>
           <Actions>

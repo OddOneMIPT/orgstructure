@@ -70,6 +70,12 @@ export function SearchField() {
         onChange={(event) => {
           setQuery(event.target.value);
         }}
+        onKeyDown={(event) => {
+          // Escape очищает запрос, не убирая фокус из поля.
+          if (event.key !== 'Escape') return;
+          event.preventDefault();
+          setQuery('');
+        }}
       />
       {query === '' ? null : (
         <Clear

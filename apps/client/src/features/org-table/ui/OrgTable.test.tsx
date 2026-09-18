@@ -71,7 +71,12 @@ const header = (label: string | RegExp) =>
 
 beforeEach(() => {
   tableUiStore.setState(() => ({ sort: null }));
-  dashboardStore.setState(() => ({ query: '', selectedId: null, view: 'table' }));
+  dashboardStore.setState(() => ({
+    keyboardPanel: 'table',
+    query: '',
+    selectedId: null,
+    view: 'table',
+  }));
 });
 
 describe('OrgTable', () => {
@@ -285,5 +290,43 @@ describe('OrgTable', () => {
     });
 
     expect(scrollIntoView).not.toHaveBeenCalled();
+  });
+
+  describe('выделение', () => {
+    it('повторный клик по выделенной строке снимает выделение', async () => {
+      const user = userEvent.setup();
+      renderTable();
+
+      await user.click(screen.getByText('Облако'));
+      expect(dashboardStore.getState().selectedId).toBe('team-c');
+
+      await user.click(screen.getByText('Облако'));
+      expect(dashboardStore.getState().selectedId).toBeNull();
+    });
+
+    it('Escape снимает выделение', async () => {
+      const user = userEvent.setup();
+      renderTable();
+
+      await user.click(screen.getByText('Облако'));
+      screen.getByText('Облако').closest('tr')!.focus();
+      await user.keyboard('{Escape}');
+
+      expect(dashboardStore.getState().selectedId).toBeNull();
+    });
+
+    it('стрелки работают без Tab, когда фокуса нет', async () => {
+      const user = userEvent.setup();
+      render(
+        <ThemeProvider theme={theme}>
+          <OrgTable model={model} view={ALL_VISIBLE} claimsArrows />
+        </ThemeProvider>,
+      );
+
+      document.body.focus();
+      await user.keyboard('{ArrowDown}');
+
+      expect(screen.getByText('Коммерция').closest('tr')).toHaveFocus();
+    });
   });
 });

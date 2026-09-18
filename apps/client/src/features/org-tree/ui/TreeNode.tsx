@@ -5,10 +5,10 @@ import styled from 'styled-components';
 import { performanceTone, splitByMatch, type OrgNodeId } from '@/entities/org';
 import { motion } from '@/shared/config/theme';
 import { describeStaff, formatBudget, formatStaff } from '@/shared/lib/format';
-import { selectNode, useIsSelected } from '@/shared/model/dashboardStore';
+import { toggleNode as toggleSelection, useIsSelected } from '@/shared/model/dashboardStore';
 import { FlashValue, PerformanceBar } from '@/shared/ui';
 
-import { toggleNode, useIsExpanded } from '../model/treeUiStore';
+import { expandNode, toggleNode, useIsExpanded } from '../model/treeUiStore';
 import { OrgTreeContext } from './OrgTreeContext';
 
 /** Глубже восьмого уровня отступ перестаёт расти: набор классов должен быть конечным (ADR 005). */
@@ -177,14 +177,26 @@ export const TreeNode = memo(function TreeNode({ id, depth, rovingProps }: TreeN
       <Row
         data-branch={hasChildren && !view.isActive}
         data-selected={isSelected}
+        /**
+         * Клик по строке выделяет узел и раскрывает ветку, но никогда не сворачивает:
+         * иначе повторный клик по выделенной ветке прятал бы данные, которые
+         * пользователь только что открыл. Сворачивают шеврон и стрелка влево.
+         */
         onClick={() => {
-          selectNode(id);
-          if (hasChildren && !view.isActive) toggleNode(id);
+          // Повторный клик по выделенной строке снимает выделение.
+          toggleSelection(id);
+          if (hasChildren && !view.isActive) expandNode(id);
         }}
       >
         <NameCell $depth={Math.min(depth, MAX_INDENT_DEPTH)}>
           {hasChildren && !view.isActive ? (
             <Toggle
+              /**
+               * Вне порядка табуляции: иначе Tab шёл бы через шеврон каждого видимого
+               * узла — девятнадцать нажатий, прежде чем добраться до самого дерева.
+               * С клавиатуры ветки раскрываются стрелками ←/→, как и положено дереву.
+               */
+              tabIndex={-1}
               aria-expanded={isExpanded}
               aria-label={`${isExpanded ? 'Свернуть' : 'Развернуть'} ${node.name}`}
               onClick={(event) => {

@@ -11,7 +11,13 @@ import {
   levelLabel,
 } from '@/shared/lib/format';
 import { useRovingFocus } from '@/shared/lib/useRovingFocus';
-import { selectNode, useQuery, useSelectedId } from '@/shared/model/dashboardStore';
+import {
+  claimKeyboard,
+  selectNode,
+  toggleNode,
+  useQuery,
+  useSelectedId,
+} from '@/shared/model/dashboardStore';
 import { Button, FlashValue, Panel, PerformanceBar, StateMessage } from '@/shared/ui';
 
 import { selectRows } from '../model/selectRows';
@@ -109,9 +115,11 @@ const PerformanceCell = styled.td`
 export interface OrgTableProps {
   model: OrgModel;
   view: FilteredView;
+  /** Этой панели достаются стрелки, когда фокуса нет ни на чём. */
+  claimsArrows?: boolean;
 }
 
-export function OrgTable({ model, view }: OrgTableProps) {
+export function OrgTable({ model, view, claimsArrows = false }: OrgTableProps) {
   const sort = useSort();
   const query = useQuery();
   const selectedId = useSelectedId();
@@ -124,7 +132,11 @@ export function OrgTable({ model, view }: OrgTableProps) {
   const roving = useRovingFocus({
     ids: useMemo(() => rows.map((row) => row.id), [rows]),
     containerRef: scrollRef,
-    onActivate: selectNode,
+    onActivate: toggleNode,
+    onEscape: () => {
+      selectNode(null);
+    },
+    claimArrows: claimsArrows,
   });
 
   /**
@@ -148,7 +160,12 @@ export function OrgTable({ model, view }: OrgTableProps) {
   }, [selectedId]);
 
   return (
-    <TablePanel aria-label="Аналитическая таблица">
+    <TablePanel
+      aria-label="Аналитическая таблица"
+      onPointerDown={() => {
+        claimKeyboard('table');
+      }}
+    >
       <Header>
         <Title>Подразделения</Title>
         {sort ? (
@@ -196,7 +213,8 @@ export function OrgTable({ model, view }: OrgTableProps) {
                   {...roving.itemProps(row.id)}
                   onClick={() => {
                     roving.setActiveId(row.id);
-                    selectNode(row.id);
+                    // Повторный клик по выделенной строке снимает выделение.
+                    toggleNode(row.id);
                   }}
                 >
                   <NameCell $depth={sort ? 0 : Math.min(row.depth, MAX_INDENT_DEPTH)}>

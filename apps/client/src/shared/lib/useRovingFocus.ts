@@ -1,4 +1,4 @@
-import { useCallback, useState, type KeyboardEvent, type RefObject } from 'react';
+import { useCallback, useEffect, useState, type KeyboardEvent, type RefObject } from 'react';
 
 export interface RovingFocusOptions {
   /** Идентификаторы в том порядке, в каком они видны на экране. */
@@ -6,8 +6,16 @@ export interface RovingFocusOptions {
   containerRef: RefObject<HTMLElement | null>;
   /** Enter по активному элементу. */
   onActivate?: (id: string) => void;
+  /** Escape в списке. */
+  onEscape?: () => void;
   /** Дополнительные клавиши (например, стрелки вбок в дереве). Вернуть true, если обработано. */
   onKey?: (id: string, event: KeyboardEvent<HTMLElement>) => boolean;
+  /**
+   * Список берёт на себя стрелки, когда фокуса нет ни на чём: пользователь просто
+   * нажимает вниз, и навигация начинает работать без предварительного Tab.
+   * Владелец должен быть один — иначе две панели подрались бы за первое нажатие.
+   */
+  claimArrows?: boolean;
 }
 
 export interface RovingFocus {
@@ -33,7 +41,9 @@ export function useRovingFocus({
   ids,
   containerRef,
   onActivate,
+  onEscape,
   onKey,
+  claimArrows = false,
 }: RovingFocusOptions): RovingFocus {
   const [activeId, setActiveId] = useState<string | null>(null);
 
@@ -105,14 +115,37 @@ export function useRovingFocus({
         case ' ':
           onActivate?.(active);
           break;
+        case 'Escape':
+          onEscape?.();
+          break;
         default:
           return;
       }
 
       event.preventDefault();
     },
-    [current, ids, move, onActivate, onKey],
+    [current, ids, move, onActivate, onEscape, onKey],
   );
+
+  useEffect(() => {
+    if (!claimArrows || current === null) return undefined;
+
+    const onWindowKeyDown = (event: globalThis.KeyboardEvent): void => {
+      if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
+
+      // Фокус уже где-то есть (поле поиска, кнопка, сам список) — не вмешиваемся.
+      const active = document.activeElement;
+      if (active !== null && active !== document.body) return;
+
+      event.preventDefault();
+      move(current);
+    };
+
+    window.addEventListener('keydown', onWindowKeyDown);
+    return () => {
+      window.removeEventListener('keydown', onWindowKeyDown);
+    };
+  }, [claimArrows, current, move]);
 
   const itemProps = useCallback(
     (id: string) => ({
