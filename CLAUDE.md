@@ -11,16 +11,21 @@
 
 | Слой | Технологии |
 | --- | --- |
-| Клиент | React, Vite, TypeScript (strict), styled-components, @tanstack/react-query, zod, lucide-react (только иконки) |
+| Клиент | React 19, Vite, **TypeScript 5.9.x**, styled-components 6.5.x, @tanstack/react-query 5, zod 4, lucide-react (только именованные импорты иконок) |
 | Сервер | Node 22, Fastify, `ws` (через @fastify/websocket), zod, tsx (dev), esbuild-бандл (prod) |
 | Контракт | `packages/contracts` — zod-схемы и типы, общие для клиента и сервера |
 | Тесты | Vitest, @testing-library/react (точечно) |
-| Качество | ESLint (flat, typescript-eslint, react-hooks, react), Prettier, `npm run size` (бюджет бандла) |
+| Качество | **ESLint 9.39.x** (flat, typescript-eslint 8, eslint-plugin-react-hooks 7), Prettier, `npm run size` (бюджет бандла) |
 | Прод | Docker Compose, Nginx (статика + gzip, прокси `/api` и `/ws`) |
 
 Запрещено: UI-библиотеки и дизайн-системы (MUI, Ant, Radix-themes, Tailwind и т.п.), стейт-менеджеры
 (Redux, MobX, Zustand), axios, lodash, moment/date-fns, готовые tree/table/virtual-компоненты.
 Новая runtime-зависимость клиента = запись в ADR (бюджет прод-сборки ≤ 200 КБ gzip).
+
+**Версии пиним, «последнее» не ставим** (ADR 001): `typescript@latest` — это 7.x, который
+`typescript-eslint` ещё не поддерживает (`>=4.8.4 <6.1.0`); `eslint@latest` — 10.x, который не поддерживает
+`eslint-plugin-react`. Поэтому TypeScript 5.9.x и ESLint 9.39.x, а `eslint-plugin-react` не используется
+вовсе.
 
 ## Структура
 
@@ -64,18 +69,22 @@ docs/                    # architecture.md, data-model.md, adr/, plan.md, ai-log
 - Любой вход извне (HTTP-ответ, WS-сообщение, ответ AI) проходит zod-валидацию; невалидное = ошибка/игнор
   с логом, но не «как-нибудь отрисуем».
 - Сеть — только через `shared/api`; в `queryFn` всегда пробрасывается `signal`. `staleTime: 5_000`.
-- В кэше react-query лежит готовая `OrgModel` (индексы + агрегаты), `structuralSharing: false`;
-  идентичность сохраняем сами: `buildModel(nodes, prev)` и `applyPatch(model, patch)` переиспользуют
-  нетронутые объекты.
-- WS-патч применяется через `setQueryData` без рефетча; рефетч (`invalidateQueries`) — только при смене
-  эпохи сервера, разрыве версий или `reset`.
+- В кэше react-query лежит готовая `OrgModel` (индексы + агрегаты); `structuralSharing: false` задаётся в
+  `defaultOptions.queries` (не в `useQuery` — патч может прийти до монтирования). Идентичность сохраняем
+  сами: `buildModel(nodes, revision, prev)` и `applyPatch(model, patch)` переиспользуют нетронутые объекты.
+- WS-патч применяется через `setQueryData` без рефетча, причём результат `applyPatch` проверяется **до**
+  записи: `null` означает «нужен рефетч», а не значение для кэша. Рефетч (`invalidateQueries`) — только при
+  смене эпохи сервера, разрыве версий или `reset`.
 - Агрегаты: полный расчёт один раз при построении модели, дальше — дельта вверх по предкам, O(глубина).
   Компоненты агрегаты не считают, только читают.
 - Всё в `entities/` — чистые функции без React и без побочных эффектов, покрыты unit-тестами.
 
 **UI и стили (ADR 005).**
-- Только styled-components. Никакого inline-CSS: проп `style` запрещён линтером; динамика — через
-  transient-пропсы (`$depth`, `$tone`) с конечным набором значений или через `data-*`/`aria-*` селекторы.
+- Только styled-components. Никакого inline-CSS: проп `style` запрещён линтером — правилом ядра
+  `no-restricted-syntax` с селектором `JSXAttribute[name.name='style']` (ловит и DOM-элементы, и компоненты,
+  не требует `eslint-plugin-react`). Динамика — через transient-пропсы (`$tone`) с конечным набором значений
+  или через `data-*`/`aria-*` селекторы. Единственное исключение для непрерывного значения — `$pct`
+  (целое 0–100) у `PerformanceBar`, см. ADR 005.
 - Цвета, отступы, радиусы, тайминги — только из темы (`app/theme`), без литералов в компонентах.
 - Анимации — CSS (transition/keyframes); высота дерева — `grid-template-rows: 0fr ↔ 1fr`.
   Любая анимация гасится под `prefers-reduced-motion: reduce`.
@@ -94,7 +103,9 @@ docs/                    # architecture.md, data-model.md, adr/, plan.md, ai-log
 
 **Тесты.** Обязательно: агрегация, `applyPatch` (инкремент == полный пересчёт), целостность дерева
 (дубликаты id, сироты, циклы), backoff, форматирование бюджета, парсер/применение поискового фильтра.
-Компонентные тесты — только на поведение (сортировка, клавиатура), без снапшотов.
+Компонентные тесты — только на поведение (сортировка, клавиатура), без снапшотов. Vitest настроен через
+`test.projects`: клиент — `jsdom` + `test/setup.ts` (заглушки `matchMedia`, `scrollIntoView`), сервер и
+контракты — `node`. Ни один тест не ждёт `transitionend`/`animationend`: jsdom их не шлёт.
 
 ## Окружение
 

@@ -15,19 +15,19 @@
 
 ```ts
 type OrgModel = {
-  epoch: string            // id запуска сервера; версии сравнимы только внутри эпохи (ADR 004)
-  version: number
-  byId: ReadonlyMap<Id, OrgNode>
-  childrenOf: ReadonlyMap<Id | null, readonly Id[]>   // null → корни (дивизионы)
-  depthOf: ReadonlyMap<Id, number>
-  aggregates: ReadonlyMap<Id, Aggregate>
-}
+  epoch: string; // id запуска сервера; версии сравнимы только внутри эпохи (ADR 004)
+  version: number;
+  byId: ReadonlyMap<Id, OrgNode>;
+  childrenOf: ReadonlyMap<Id | null, readonly Id[]>; // null → корни (дивизионы)
+  depthOf: ReadonlyMap<Id, number>;
+  aggregates: ReadonlyMap<Id, Aggregate>;
+};
 type Aggregate = {
-  headcount: number        // Σ headcount по поддереву
-  budget: number           // Σ budget по поддереву
-  perfWeight: number       // Σ performance · headcount по поддереву
-  avgPerformance: number | null   // perfWeight / headcount; null при headcount = 0
-}
+  headcount: number; // Σ headcount по поддереву
+  budget: number; // Σ budget по поддереву
+  perfWeight: number; // Σ performance · headcount по поддереву
+  avgPerformance: number | null; // perfWeight / headcount; null при headcount = 0
+};
 ```
 
 Хранится **числитель** взвешенного среднего (`perfWeight`), а не только само среднее — это делает
@@ -52,6 +52,10 @@ O(глубина) на изменение, дети не посещаются в
 **Мемоизация** обеспечивается тем, что агрегаты — часть модели в кэше (ADR 002): компоненты их только читают.
 Производные представления (отсортированные/отфильтрованные строки) — `useMemo` от `(model, sort, filter)`.
 
+Тот же обход вверх по предкам (`byId[id].parentId`, пока не `null`) переиспользуется поиском: фильтр
+считает `visible = matched ∪ ancestors(matched)`, чтобы путь до совпадения не рвался. Функция `ancestorsOf`
+живёт рядом с моделью и не дублируется по фичам.
+
 **Инвариант для тестов:** для любой последовательности патчей
 `applyPatch(model, p).aggregates` ≡ `buildModel(applyToNodes(nodes, p)).aggregates`.
 
@@ -72,6 +76,9 @@ O(глубина) на изменение, дети не посещаются в
   перенос узла) инкрементально не применяются — сервер шлёт `reset`, клиент делает рефетч и полный расчёт.
 - Поверхностная копия индексов — O(n) по ссылкам; осознанный компромисс ради иммутабельности без
   persistent-структур. Пересчёт значений при этом остаётся O(глубина).
-- «Подсветка обновлённых ячеек» получает точный сигнал бесплатно: изменилась ссылка агрегата/узла →
-  ячейка перезапускает анимацию.
+- «Подсветка обновлённых ячеек» сравнивает **отрисованное значение**, а не ссылку: патч, меняющий только
+  `performance`, создаёт новый объект `Aggregate` у каждого предка, и колонка «Бюджет суммарный» мигала бы
+  с неизменившимся числом (ADR 005).
+- `applyPatch` возвращает `null`, если патч ссылается на неизвестный `id`; вызывающий код обязан проверить
+  это **до** записи в кэш (ADR 004).
 - `headcount = 0` во всём поддереве → средняя эффективность `null`, в UI «—».
