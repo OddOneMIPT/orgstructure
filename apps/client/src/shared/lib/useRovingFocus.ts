@@ -6,7 +6,7 @@ export interface RovingFocusOptions {
   containerRef: RefObject<HTMLElement | null>;
   /** Enter по активному элементу. */
   onActivate?: (id: string) => void;
-  /** Escape в списке. */
+  /** Escape в списке: снимает выделение. Фокус при этом уходит со строки. */
   onEscape?: () => void;
   /** Дополнительные клавиши (например, стрелки вбок в дереве). Вернуть true, если обработано. */
   onKey?: (id: string, event: KeyboardEvent<HTMLElement>) => boolean;
@@ -117,6 +117,11 @@ export function useRovingFocus({
           break;
         case 'Escape':
           onEscape?.();
+          /**
+           * Снимаем и обводку фокуса: после Escape список должен выглядеть «отпущенным».
+           * Фокус уходит на body, откуда стрелки снова входят в список без Tab.
+           */
+          origin?.blur();
           break;
         default:
           return;

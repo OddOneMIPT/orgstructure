@@ -132,6 +132,23 @@ const Group = styled.ul`
   overflow: hidden;
 `;
 
+/**
+ * Фокус живёт на `li` — так требует роль `treeitem`, — но его коробка включает и вложенную
+ * ветку: у раскрытого узла это десятки строк, и обводка обводила бы всё поддерево.
+ * Поэтому кольцо рисуется на самой строке, и ссылка на компонент здесь важнее селектора
+ * `> div`: тот попадал ещё и в обёртку группы.
+ */
+const Item = styled.li`
+  &:focus {
+    outline: none;
+  }
+
+  &:focus-visible > ${Row} {
+    outline: 2px solid ${({ theme }) => theme.colors.focus};
+    outline-offset: -2px;
+  }
+`;
+
 export interface TreeNodeProps {
   id: OrgNodeId;
   depth: number;
@@ -166,7 +183,7 @@ export const TreeNode = memo(function TreeNode({ id, depth, rovingProps }: TreeN
   const isExpanded = view.isActive ? hasChildren : storeExpanded;
 
   return (
-    <li
+    <Item
       role="treeitem"
       aria-level={depth + 1}
       aria-selected={isSelected}
@@ -253,6 +270,6 @@ export const TreeNode = memo(function TreeNode({ id, depth, rovingProps }: TreeN
           </Group>
         </GroupWrapper>
       ) : null}
-    </li>
+    </Item>
   );
 });

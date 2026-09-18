@@ -8,17 +8,23 @@ import { useRovingFocus } from './useRovingFocus';
 function List({
   ids,
   onActivate,
+  onEscape,
   onKey,
+  claimArrows = false,
 }: {
   ids: string[];
   onActivate?: (id: string) => void;
+  onEscape?: () => void;
   onKey?: (id: string, event: { key: string }) => boolean;
+  claimArrows?: boolean;
 }) {
   const containerRef = useRef<HTMLUListElement>(null);
   const roving = useRovingFocus({
     ids,
     containerRef,
+    claimArrows,
     ...(onActivate ? { onActivate } : {}),
+    ...(onEscape ? { onEscape } : {}),
     ...(onKey ? { onKey } : {}),
   });
 
@@ -140,5 +146,31 @@ describe('useRovingFocus', () => {
     rerender(<List ids={['x', 'y']} />);
 
     expect(screen.getByText('x')).toHaveAttribute('tabindex', '0');
+  });
+
+  it('Escape вызывает обработчик и снимает обводку фокуса', async () => {
+    const user = userEvent.setup();
+    const onEscape = vi.fn();
+    render(<List ids={ids} onEscape={onEscape} />);
+
+    screen.getByText('a').focus();
+    expect(screen.getByText('a')).toHaveFocus();
+
+    await user.keyboard('{Escape}');
+
+    expect(onEscape).toHaveBeenCalled();
+    expect(screen.getByText('a')).not.toHaveFocus();
+    expect(document.body).toHaveFocus();
+  });
+
+  it('после Escape стрелка снова входит в список', async () => {
+    const user = userEvent.setup();
+    render(<List ids={ids} claimArrows />);
+
+    screen.getByText('a').focus();
+    await user.keyboard('{Escape}');
+    await user.keyboard('{ArrowDown}');
+
+    expect(screen.getByText('a')).toHaveFocus();
   });
 });
