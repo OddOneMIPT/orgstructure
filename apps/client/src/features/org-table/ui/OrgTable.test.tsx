@@ -1,12 +1,12 @@
 import type { OrgNode } from '@org/contracts';
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ThemeProvider } from 'styled-components';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ALL_VISIBLE, buildModel, createNamePredicate, selectFilteredView } from '@/entities/org';
 import { theme } from '@/shared/config/theme';
-import { dashboardStore, setQuery } from '@/shared/model/dashboardStore';
+import { dashboardStore, selectNode, setQuery } from '@/shared/model/dashboardStore';
 import { normalizeSpaces } from '@/shared/lib/format';
 
 import { tableUiStore } from '../model/tableUiStore';
@@ -169,5 +169,29 @@ describe('OrgTable', () => {
 
     expect(screen.getByText(/ничего не найдено/i)).toBeInTheDocument();
     expect(screen.queryByRole('table')).not.toBeInTheDocument();
+  });
+
+  it('прокручивает таблицу к узлу, выбранному в дереве', async () => {
+    const scrollIntoView = vi.fn();
+    renderTable();
+
+    for (const row of screen.getAllByRole('row')) {
+      row.scrollIntoView = scrollIntoView;
+    }
+
+    act(() => {
+      selectNode('team-c');
+    });
+
+    // Прокрутка отложена на кадр: до этого строка может быть ещё не на месте.
+    await act(async () => {
+      await new Promise((resolve) => {
+        requestAnimationFrame(() => {
+          resolve(undefined);
+        });
+      });
+    });
+
+    expect(scrollIntoView).toHaveBeenCalledWith({ block: 'nearest' });
   });
 });

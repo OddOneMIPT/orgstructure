@@ -1,5 +1,5 @@
 import { ListRestart, SearchX } from 'lucide-react';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import styled from 'styled-components';
 
 import { performanceTone, splitByMatch, type FilteredView, type OrgModel } from '@/entities/org';
@@ -56,6 +56,8 @@ const Table = styled.table`
 
 const Row = styled.tr`
   cursor: pointer;
+  /* Чтобы прокрутка не прятала строку под липкой шапкой. */
+  scroll-margin-block-start: 34px;
 
   &:hover {
     background: ${({ theme }) => theme.colors.surfaceMuted};
@@ -109,6 +111,24 @@ export function OrgTable({ model, view }: OrgTableProps) {
   // Пересчёт только при смене модели, фильтра или сортировки.
   const rows = useMemo(() => selectRows(model, { view, sort }), [model, view, sort]);
 
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Выделение приходит и из дерева: показываем строку, не трогая скролл, если она уже видна.
+  useEffect(() => {
+    if (selectedId === null) return undefined;
+
+    // Следующим кадром: после смены сортировки или фильтра строка ещё не на своём месте.
+    const frame = requestAnimationFrame(() => {
+      scrollRef.current
+        ?.querySelector(`[data-node-id="${CSS.escape(selectedId)}"]`)
+        ?.scrollIntoView({ block: 'nearest' });
+    });
+
+    return () => {
+      cancelAnimationFrame(frame);
+    };
+  }, [selectedId, rows]);
+
   return (
     <TablePanel aria-label="Аналитическая таблица">
       <Header>
@@ -121,7 +141,7 @@ export function OrgTable({ model, view }: OrgTableProps) {
         ) : null}
       </Header>
 
-      <Scroll>
+      <Scroll ref={scrollRef}>
         {rows.length === 0 ? (
           <StateMessage
             icon={<SearchX size={24} aria-hidden />}
@@ -153,6 +173,7 @@ export function OrgTable({ model, view }: OrgTableProps) {
               {rows.map((row) => (
                 <Row
                   key={row.id}
+                  data-node-id={row.id}
                   aria-selected={row.id === selectedId}
                   onClick={() => {
                     selectNode(row.id);
