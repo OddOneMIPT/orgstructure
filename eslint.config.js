@@ -37,7 +37,11 @@ export default tseslint.config(
       'no-restricted-syntax': ['error', noInlineStyle],
       'no-console': ['warn', { allow: ['warn', 'error'] }],
       eqeqeq: ['error', 'always', { null: 'ignore' }],
-      '@typescript-eslint/consistent-type-imports': ['error', { fixStyle: 'inline-type-imports' }],
+      '@typescript-eslint/consistent-type-imports': [
+        'error',
+        // disallowTypeAnnotations: import()-типы нужны в vi.mock(..., importOriginal)
+        { fixStyle: 'inline-type-imports', disallowTypeAnnotations: false },
+      ],
       '@typescript-eslint/no-unnecessary-condition': 'off',
       '@typescript-eslint/no-unused-vars': [
         'error',
