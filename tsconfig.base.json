@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    "target": "ES2023",
+    "module": "ESNext",
+    /* ADR 001: контракты — source-only пакет, его `exports` указывает на .ts.
+       Это резолвится только при "bundler"; при node16/nodenext tsc ищет объявления для JS-пути и падает. */
+    "moduleResolution": "bundler",
+    "moduleDetection": "force",
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "resolveJsonModule": true,
+
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "forceConsistentCasingInFileNames": true,
+
+    "noEmit": true,
+    "skipLibCheck": true,
+
+    /* Подстраховка к `exports` контрактов — для инструментов, которые его игнорируют. */
+    "paths": {
+      "@org/contracts": ["./packages/contracts/src/index.ts"]
+    }
+  }
+}
