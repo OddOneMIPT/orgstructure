@@ -84,7 +84,8 @@ export default tseslint.config(
   },
 
   {
-    files: ['scripts/**/*.mjs', 'eslint.config.js'],
+    // Сборочные скрипты — обычный JS вне TS-проекта: типизированные правила к ним неприменимы.
+    files: ['**/*.mjs', 'eslint.config.js'],
     ...tseslint.configs.disableTypeChecked,
   },
 );

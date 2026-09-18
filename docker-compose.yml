@@ -1,0 +1,41 @@
+# Значения по умолчанию заданы прямо здесь: `docker compose up` должен работать
+# одной командой, без предварительного копирования .env (задание: «запуск одной командой»).
+# Переопределить их можно через .env — образец в .env.example.
+
+services:
+  server:
+    build:
+      context: .
+      dockerfile: apps/server/Dockerfile
+    environment:
+      PORT: 3000
+      HOST: 0.0.0.0
+      # Имитация живых данных; 0 выключает поток обновлений.
+      TICK_INTERVAL_MS: ${TICK_INTERVAL_MS:-3000}
+      # Отладочные параметры запроса (?delay, ?fail, ?empty, ?invalid).
+      MOCK_DEBUG: ${MOCK_DEBUG:-0}
+      # Без ключа AI-поиск честно откатывается на текстовый (ADR 007).
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      AI_MODEL: ${AI_MODEL:-claude-haiku-4-5-20251001}
+      AI_TIMEOUT_MS: ${AI_TIMEOUT_MS:-8000}
+    # Наружу не публикуется: снаружи доступен только Nginx.
+    expose:
+      - '3000'
+    healthcheck:
+      test: ['CMD', 'node', '-e', "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
+
+  client:
+    build:
+      context: .
+      dockerfile: apps/client/Dockerfile
+    ports:
+      - '${CLIENT_PORT:-8080}:80'
+    depends_on:
+      server:
+        condition: service_healthy
+    restart: unless-stopped
