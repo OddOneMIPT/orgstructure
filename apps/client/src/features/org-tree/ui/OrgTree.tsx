@@ -181,11 +181,21 @@ export function OrgTree({ model, view }: OrgTreeProps) {
     initializeExpanded(model);
   }, [model]);
 
+  /**
+   * Модель нужна для раскрытия предков, но зависеть от неё эффект не должен:
+   * она меняется на каждом живом обновлении, и дерево прокручивалось бы к выделенному
+   * узлу при каждом патче.
+   */
+  const modelRef = useRef(model);
+  useEffect(() => {
+    modelRef.current = model;
+  }, [model]);
+
   // Выделение приходит и из таблицы: раскрываем путь и показываем узел.
   useEffect(() => {
     if (selectedId === null) return undefined;
 
-    expandAncestors(model, selectedId);
+    expandAncestors(modelRef.current, selectedId);
 
     // Следующим кадром: до этого только что раскрытая строка ещё не встала на место.
     const frame = requestAnimationFrame(() => {
@@ -197,7 +207,7 @@ export function OrgTree({ model, view }: OrgTreeProps) {
     return () => {
       cancelAnimationFrame(frame);
     };
-  }, [selectedId, model]);
+  }, [selectedId]);
 
   return (
     <OrgTreeContext.Provider value={context}>

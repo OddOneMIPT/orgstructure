@@ -1,12 +1,12 @@
 import type { OrgNode } from '@org/contracts';
-import { render, screen, within } from '@testing-library/react';
+import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ThemeProvider } from 'styled-components';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ALL_VISIBLE, buildModel } from '@/entities/org';
 import { theme } from '@/shared/config/theme';
-import { dashboardStore } from '@/shared/model/dashboardStore';
+import { dashboardStore, selectNode } from '@/shared/model/dashboardStore';
 
 import { treeUiStore } from '../model/treeUiStore';
 import { OrgTree } from './OrgTree';
@@ -36,6 +36,16 @@ const renderTree = () =>
       <OrgTree model={model} view={ALL_VISIBLE} />
     </ThemeProvider>,
   );
+
+/** Та же структура, другие числа и ревизия — как после живого патча. */
+const patchedModel = buildModel(
+  [
+    node('div', null, 'Технологии'),
+    node('dep', 'div', 'Инфраструктура'),
+    { ...node('team', 'dep', 'Облако'), headcount: 42 },
+  ],
+  { epoch: 'e1', version: 2 },
+);
 
 const rowOf = (name: string): HTMLElement => screen.getByText(name).closest('li')!;
 
@@ -194,5 +204,43 @@ describe('OrgTree', () => {
     const group = rowOf('Облако').closest('ul[role="group"]');
     expect(group).not.toHaveAttribute('inert');
     expect(isHidden('Облако')).toBe(false);
+  });
+
+  it('живое обновление не прокручивает дерево: скролл только при смене выделения', async () => {
+    const scrollIntoView = vi.fn();
+    const { rerender } = renderTree();
+
+    act(() => {
+      selectNode('dep');
+    });
+
+    await act(async () => {
+      await new Promise((resolve) => {
+        requestAnimationFrame(() => {
+          resolve(undefined);
+        });
+      });
+    });
+
+    for (const item of screen.getAllByRole('treeitem')) {
+      item.scrollIntoView = scrollIntoView;
+    }
+    scrollIntoView.mockClear();
+
+    rerender(
+      <ThemeProvider theme={theme}>
+        <OrgTree model={patchedModel} view={ALL_VISIBLE} />
+      </ThemeProvider>,
+    );
+
+    await act(async () => {
+      await new Promise((resolve) => {
+        requestAnimationFrame(() => {
+          resolve(undefined);
+        });
+      });
+    });
+
+    expect(scrollIntoView).not.toHaveBeenCalled();
   });
 });

@@ -46,6 +46,17 @@ const renderTable = (view = ALL_VISIBLE) =>
     </ThemeProvider>,
   );
 
+/** Та же структура, но другие числа и ревизия — как после живого патча. */
+const patchedModel = buildModel(
+  [
+    node('div-t', null, 'Технологии', 4, 9_000_000, 90),
+    node('dep-i', 'div-t', 'Инфраструктура', 3, 7_000_000, 80),
+    node('team-c', 'dep-i', 'Облако', 42, 2_000_000, 40),
+    node('div-k', null, 'Коммерция', 8, 3_000_000, 50),
+  ],
+  { epoch: 'e1', version: 2 },
+);
+
 const names = (): string[] =>
   screen
     .getAllByRole('row')
@@ -235,5 +246,44 @@ describe('OrgTable', () => {
 
       expect(dashboardStore.getState().selectedId).toBe('div-t');
     });
+  });
+
+  it('живое обновление не прокручивает таблицу: скролл только при смене выделения', async () => {
+    const scrollIntoView = vi.fn();
+    const { rerender } = renderTable();
+
+    act(() => {
+      selectNode('team-c');
+    });
+
+    await act(async () => {
+      await new Promise((resolve) => {
+        requestAnimationFrame(() => {
+          resolve(undefined);
+        });
+      });
+    });
+
+    // Дальше следим только за прокруткой, вызванной обновлением данных.
+    for (const row of screen.getAllByRole('row')) {
+      row.scrollIntoView = scrollIntoView;
+    }
+    scrollIntoView.mockClear();
+
+    rerender(
+      <ThemeProvider theme={theme}>
+        <OrgTable model={patchedModel} view={ALL_VISIBLE} />
+      </ThemeProvider>,
+    );
+
+    await act(async () => {
+      await new Promise((resolve) => {
+        requestAnimationFrame(() => {
+          resolve(undefined);
+        });
+      });
+    });
+
+    expect(scrollIntoView).not.toHaveBeenCalled();
   });
 });

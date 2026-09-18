@@ -127,11 +127,15 @@ export function OrgTable({ model, view }: OrgTableProps) {
     onActivate: selectNode,
   });
 
-  // Выделение приходит и из дерева: показываем строку, не трогая скролл, если она уже видна.
+  /**
+   * Показываем строку, когда меняется **выделение**, и только тогда.
+   * Зависеть от строк нельзя: они пересобираются на каждом живом обновлении, и таблицу
+   * дёргало бы к выделенной строке при каждом патче.
+   */
   useEffect(() => {
     if (selectedId === null) return undefined;
 
-    // Следующим кадром: после смены сортировки или фильтра строка ещё не на своём месте.
+    // Следующим кадром: сразу после раскрытия ветки строка ещё не встала на место.
     const frame = requestAnimationFrame(() => {
       scrollRef.current
         ?.querySelector(`[data-node-id="${CSS.escape(selectedId)}"]`)
@@ -141,7 +145,7 @@ export function OrgTable({ model, view }: OrgTableProps) {
     return () => {
       cancelAnimationFrame(frame);
     };
-  }, [selectedId, rows]);
+  }, [selectedId]);
 
   return (
     <TablePanel aria-label="Аналитическая таблица">
