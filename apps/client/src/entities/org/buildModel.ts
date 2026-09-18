@@ -1,5 +1,6 @@
 import { isSameRevision, type OrgNode, type OrgNodeId, type Revision } from '@org/contracts';
 
+import { computeAggregates } from './aggregate';
 import { IntegrityError } from './errors';
 import type { OrgModel } from './types';
 
@@ -91,7 +92,9 @@ export function buildModel(
     throw new IntegrityError('cycle', unreachable);
   }
 
-  return { revision, byId, childrenOf, depthOf, roots };
+  const aggregates = computeAggregates({ byId, depthOf, previous: prev?.aggregates });
+
+  return { revision, byId, childrenOf, depthOf, roots, aggregates };
 }
 
 /** Путь от родителя узла до корня. Тот же обход используют агрегация и фильтр. */
@@ -113,4 +116,5 @@ export const EMPTY_MODEL: OrgModel = {
   childrenOf: new Map(),
   depthOf: new Map(),
   roots: [],
+  aggregates: new Map(),
 };

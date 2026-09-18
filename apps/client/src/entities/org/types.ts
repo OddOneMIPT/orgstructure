@@ -1,5 +1,7 @@
 import type { OrgNode, OrgNodeId, Revision } from '@org/contracts';
 
+import type { Aggregate } from './aggregate';
+
 /**
  * Готовая к отрисовке модель дерева. Лежит прямо в кэше react-query (ADR 002):
  * компоненты её только читают, а идентичностью объектов управляют `buildModel`
@@ -16,6 +18,8 @@ export interface OrgModel {
   readonly childrenOf: ReadonlyMap<OrgNodeId | null, readonly OrgNodeId[]>;
   readonly depthOf: ReadonlyMap<OrgNodeId, number>;
   readonly roots: readonly OrgNodeId[];
+  /** Суммарные показатели по поддереву каждого узла. Считаются один раз при построении модели. */
+  readonly aggregates: ReadonlyMap<OrgNodeId, Aggregate>;
 }
 
-export type { OrgNode, OrgNodeId, Revision };
+export type { Aggregate, OrgNode, OrgNodeId, Revision };
