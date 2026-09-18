@@ -7,6 +7,8 @@ export interface PerformanceBarProps {
   value: number | null;
   tone: PerformanceTone;
   className?: string;
+  /** Подсказка при наведении — например, собственный бюджет узла (макет). */
+  title?: string;
 }
 
 const Wrapper = styled.div`
@@ -48,12 +50,13 @@ const Value = styled.span<{ $tone: PerformanceTone }>`
  * Дорожка с заливкой и число рядом — как в макете, одинаковый и в дереве, и в таблице.
  * Цвет никогда не единственный носитель смысла: значение всегда продублировано числом.
  */
-export function PerformanceBar({ value, tone, className }: PerformanceBarProps) {
+export function PerformanceBar({ value, tone, className, title }: PerformanceBarProps) {
   const pct = value === null ? 0 : Math.round(Math.min(100, Math.max(0, value)));
 
   return (
     <Wrapper
       className={className}
+      {...(title === undefined ? {} : { title })}
       role="meter"
       aria-valuemin={0}
       aria-valuemax={100}

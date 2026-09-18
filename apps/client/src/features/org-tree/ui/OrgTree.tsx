@@ -1,11 +1,19 @@
-import { useEffect } from 'react';
+import { SearchX } from 'lucide-react';
+import { useEffect, useMemo, useRef } from 'react';
 import styled from 'styled-components';
 
-import type { OrgModel } from '@/entities/org';
-import { Button, Panel } from '@/shared/ui';
+import { isVisible, type FilteredView, type OrgModel } from '@/entities/org';
+import { useQuery, useSelectedId } from '@/shared/model/dashboardStore';
+import { Button, Panel, StateMessage } from '@/shared/ui';
 
-import { collapseAll, expandAll, initializeExpanded, useExpandedCount } from '../model/treeUiStore';
-import { OrgModelContext } from './OrgModelContext';
+import {
+  collapseAll,
+  expandAll,
+  expandAncestors,
+  initializeExpanded,
+  useExpandedCount,
+} from '../model/treeUiStore';
+import { OrgTreeContext } from './OrgTreeContext';
 import { TreeNode } from './TreeNode';
 
 const TreePanel = styled(Panel)`
@@ -34,7 +42,7 @@ const Actions = styled.div`
 /** Шапка колонок — как в макете: Подразделение · Эффективность · Штат. */
 const Columns = styled.div`
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 92px 60px;
+  grid-template-columns: minmax(0, 1fr) 92px 72px;
   gap: ${({ theme }) => theme.spacing.sm};
   padding: ${({ theme }) => `${theme.spacing.xs} ${theme.spacing.lg}`};
   border-bottom: 1px solid ${({ theme }) => theme.colors.border};
@@ -43,10 +51,6 @@ const Columns = styled.div`
   font-size: ${({ theme }) => theme.font.size.xs};
   text-transform: uppercase;
   letter-spacing: 0.04em;
-
-  span:nth-child(2) {
-    text-align: left;
-  }
 
   span:last-child {
     text-align: right;
@@ -57,7 +61,7 @@ const Columns = styled.div`
 const Scroll = styled.div`
   min-height: 0;
   overflow: auto;
-  padding: ${({ theme }) => `${theme.spacing.sm} ${theme.spacing.sm}`};
+  padding: ${({ theme }) => theme.spacing.sm};
 `;
 
 const Root = styled.ul`
@@ -67,17 +71,42 @@ const Root = styled.ul`
 
 export interface OrgTreeProps {
   model: OrgModel;
+  view: FilteredView;
 }
 
-export function OrgTree({ model }: OrgTreeProps) {
+export function OrgTree({ model, view }: OrgTreeProps) {
   const expandedCount = useExpandedCount();
+  const selectedId = useSelectedId();
+  const query = useQuery();
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const roots = useMemo(() => model.roots.filter((id) => isVisible(view, id)), [model.roots, view]);
+  const context = useMemo(() => ({ model, view, query }), [model, view, query]);
 
   useEffect(() => {
     initializeExpanded(model);
   }, [model]);
 
+  // Выделение приходит и из таблицы: раскрываем путь и показываем узел.
+  useEffect(() => {
+    if (selectedId === null) return undefined;
+
+    expandAncestors(model, selectedId);
+
+    // Следующим кадром: до этого только что раскрытая строка ещё не встала на место.
+    const frame = requestAnimationFrame(() => {
+      scrollRef.current
+        ?.querySelector(`[data-node-id="${CSS.escape(selectedId)}"]`)
+        ?.scrollIntoView({ block: 'nearest' });
+    });
+
+    return () => {
+      cancelAnimationFrame(frame);
+    };
+  }, [selectedId, model]);
+
   return (
-    <OrgModelContext.Provider value={model}>
+    <OrgTreeContext.Provider value={context}>
       <TreePanel aria-label="Дерево орг-структуры">
         <Header>
           <Title>Дерево орг-структуры</Title>
@@ -102,14 +131,22 @@ export function OrgTree({ model }: OrgTreeProps) {
           <span>Штат</span>
         </Columns>
 
-        <Scroll>
-          <Root role="tree" aria-label="Орг-структура компании">
-            {model.roots.map((id) => (
-              <TreeNode key={id} id={id} depth={0} />
-            ))}
-          </Root>
+        <Scroll ref={scrollRef}>
+          {roots.length === 0 ? (
+            <StateMessage
+              icon={<SearchX size={24} aria-hidden />}
+              title="Ничего не найдено"
+              description="Ни одно подразделение не подходит под запрос."
+            />
+          ) : (
+            <Root role="tree" aria-label="Орг-структура компании">
+              {roots.map((id) => (
+                <TreeNode key={id} id={id} depth={0} />
+              ))}
+            </Root>
+          )}
         </Scroll>
       </TreePanel>
-    </OrgModelContext.Provider>
+    </OrgTreeContext.Provider>
   );
 }

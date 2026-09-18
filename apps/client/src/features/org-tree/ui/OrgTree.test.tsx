@@ -4,8 +4,9 @@ import userEvent from '@testing-library/user-event';
 import { ThemeProvider } from 'styled-components';
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { buildModel } from '@/entities/org';
+import { ALL_VISIBLE, buildModel } from '@/entities/org';
 import { theme } from '@/shared/config/theme';
+import { dashboardStore } from '@/shared/model/dashboardStore';
 
 import { treeUiStore } from '../model/treeUiStore';
 import { OrgTree } from './OrgTree';
@@ -32,7 +33,7 @@ const model = buildModel(
 const renderTree = () =>
   render(
     <ThemeProvider theme={theme}>
-      <OrgTree model={model} />
+      <OrgTree model={model} view={ALL_VISIBLE} />
     </ThemeProvider>,
   );
 
@@ -40,6 +41,7 @@ const rowOf = (name: string): HTMLElement => screen.getByText(name).closest('li'
 
 beforeEach(() => {
   treeUiStore.setState(() => ({ expanded: new Set(), initializedFor: null }));
+  dashboardStore.setState(() => ({ query: '', selectedId: null, view: 'table' }));
 });
 
 describe('OrgTree', () => {

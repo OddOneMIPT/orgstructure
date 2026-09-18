@@ -1,4 +1,4 @@
-import type { OrgModel, OrgNodeId } from '@/entities/org';
+import { ancestorsOf, type OrgModel, type OrgNodeId } from '@/entities/org';
 import { createStore, useStore } from '@/shared/lib/createStore';
 
 export interface TreeUiState {
@@ -59,6 +59,20 @@ export function expandAll(model: OrgModel): void {
     for (const [id, children] of model.childrenOf) {
       if (id !== null && children.length > 0) expanded.add(id);
     }
+    return { ...prev, expanded };
+  });
+}
+
+/** Раскрывает путь до узла — нужно, когда его выбрали в таблице. */
+export function expandAncestors(model: OrgModel, id: OrgNodeId): void {
+  const ancestors = ancestorsOf(model, id);
+  if (ancestors.length === 0) return;
+
+  treeUiStore.setState((prev) => {
+    if (ancestors.every((ancestor) => prev.expanded.has(ancestor))) return prev;
+
+    const expanded = new Set(prev.expanded);
+    for (const ancestor of ancestors) expanded.add(ancestor);
     return { ...prev, expanded };
   });
 }
