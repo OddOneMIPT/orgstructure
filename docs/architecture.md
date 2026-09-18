@@ -1,12 +1,12 @@
 # Архитектура
 
-Состояние на этап 03. Документ дополняется на каждом этапе, а не пишется в конце.
+Состояние на этап 04. Документ дополняется на каждом этапе, а не пишется в конце.
 
 ## Пакеты
 
 ```
 apps/client        React + Vite, весь UI
-apps/server        Fastify, mock-API (и WebSocket с этапа 03)
+apps/server        Fastify, mock-API, WebSocket и разбор AI-запроса
 packages/contracts zod-схемы и типы, общие для клиента и сервера
 ```
 
@@ -106,6 +106,44 @@ entities/org/applyPatch        setQueryData — без рефетча
 - react-query выставляет `error` только после исчерпания ретраев и вовсе приостанавливает их в неактивной
   вкладке, поэтому экран ошибки читает ещё и `failureReason`, а последнюю ошибку компонент помнит сам:
   иначе повтор запроса показывал бы скелетон вместо ошибки.
+
+## AI-поиск
+
+```
+строка поиска, Enter
+  ▼
+POST /api/search/parse { query }            ключ живёт только здесь, на сервере
+  ▼
+apps/server/src/ai/parseSearchQuery
+  │  messages.parse(), output_config.format = zodOutputFormat(SearchFilterSchema)
+  │  ответ модели ещё раз проходит SearchFilterSchema.safeParse
+  │  любая осечка → { source: 'fallback', filter: null, reason }
+  ▼
+entities/org/createFilterPredicate          тот же предикат, что и у текстового поиска
+  ▼
+дерево и таблица фильтруются разом
+```
+
+Отдельного пути данных у AI нет: структурированный фильтр подставляется в предикат, написанный ещё на
+этапе 02, и потому автоматически действует на оба представления и раскрывает ветки к совпадениям.
+Пороговые условия сравниваются с агрегатами — с теми числами, которые человек видит в строке (ADR 007).
+
+## Прод-окружение
+
+```
+браузер :8080
+  ▼
+nginx (образ клиента)
+  │  статика: gzip on, /assets/* immutable, index.html no-cache, SPA-fallback
+  │  /api  → server:3000   (ETag не трогается: gzip_proxied off)
+  │  /ws   → server:3000   (Upgrade + proxy_read_timeout 120s > heartbeat 15s)
+  ▼
+server (бандл esbuild на node:22-alpine, non-root, наружу не публикуется)
+```
+
+Сервер собирается esbuild в один файл с **явным** списком внешних зависимостей: `--packages=external`
+вынес бы наружу и `@org/contracts`, который существует только в исходниках на TypeScript. В `build`
+встроен smoke-запуск бандла (ADR 008).
 
 ## Сервер
 

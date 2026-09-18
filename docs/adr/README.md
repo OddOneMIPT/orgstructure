@@ -12,6 +12,5 @@
 | [004](004-live-updates-websocket.md)           | Live-обновления: WebSocket, версии, exponential backoff | Принято | 0 → 3    |
 | [005](005-styling-styled-components.md)        | Стилизация: styled-components без дизайн-системы        | Принято | 0 → 1    |
 | [006](006-sorting-and-row-order.md)            | Сортировка таблицы и порядок строк                      | Принято | 2        |
-
-Запланированы (пишутся на своём шаге): 007 — AI-поиск: структурированный фильтр и fallback (шаг 4),
-008 — прод-сборка: Nginx, gzip, бюджет бандла (шаг 4).
+| [007](007-ai-search-structured-filter.md)      | AI-поиск: структурированный фильтр и fallback           | Принято | 4        |
+| [008](008-production-build-nginx-and-bundle-budget.md) | Прод-сборка: Docker, Nginx, бюджет бандла       | Принято | 4        |
