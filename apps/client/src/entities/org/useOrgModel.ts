@@ -62,7 +62,8 @@ export function useOrgModel(): UseQueryResult<OrgModel> {
   return useQuery({
     queryKey: ORG_TREE_KEY,
     staleTime: ORG_TREE_STALE_TIME,
-    retry: 1,
+    // retry и structuralSharing заданы в defaultOptions клиента (ADR 002),
+    // здесь не дублируем — иначе их нельзя переопределить снаружи.
     // signal обязателен: именно он отменяет запрос при размонтировании.
     queryFn: ({ signal }) => loadOrgModel(queryClient, signal),
   });

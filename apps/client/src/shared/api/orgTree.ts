@@ -2,7 +2,30 @@ import { OrgTreeResponseSchema, parseRevision, type OrgNode, type Revision } fro
 
 import { HttpError, NetworkError, ValidationError } from './errors';
 
-export const ORG_TREE_URL = '/api/org-tree';
+const DEBUG_PARAMS = ['delay', 'fail', 'empty', 'invalid'] as const;
+
+/**
+ * Отладочные параметры страницы прокидываются в запрос: `?empty=1` на адресе клиента
+ * должен показывать пустое состояние. Считаются один раз при загрузке модуля —
+ * если читать `location.search` на каждый вызов, URL начнёт расходиться со статичным
+ * ключом запроса, и кэш будет отвечать не тем, что запрошено.
+ */
+function buildUrl(): string {
+  if (typeof window === 'undefined') return '/api/org-tree';
+
+  const source = new URLSearchParams(window.location.search);
+  const forwarded = new URLSearchParams();
+
+  for (const key of DEBUG_PARAMS) {
+    const value = source.get(key);
+    if (value !== null) forwarded.set(key, value);
+  }
+
+  const query = forwarded.toString();
+  return query ? `/api/org-tree?${query}` : '/api/org-tree';
+}
+
+export const ORG_TREE_URL = buildUrl();
 
 export type OrgTreeFetchResult =
   | { status: 'ok'; nodes: OrgNode[]; revision: Revision | null }
