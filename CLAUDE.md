@@ -9,14 +9,14 @@
 
 ## Стек (зафиксирован, ADR 001)
 
-| Слой | Технологии |
-| --- | --- |
-| Клиент | React 19, Vite, **TypeScript 5.9.x**, styled-components 6.5.x, @tanstack/react-query 5, zod 4, lucide-react (только именованные импорты иконок) |
-| Сервер | Node 22, Fastify, `ws` (через @fastify/websocket), zod, tsx (dev), esbuild-бандл (prod) |
-| Контракт | `packages/contracts` — zod-схемы и типы, общие для клиента и сервера |
-| Тесты | Vitest, @testing-library/react (точечно) |
-| Качество | **ESLint 9.39.x** (flat, typescript-eslint 8, eslint-plugin-react-hooks 7), Prettier, `npm run size` (бюджет бандла) |
-| Прод | Docker Compose, Nginx (статика + gzip, прокси `/api` и `/ws`) |
+| Слой     | Технологии                                                                                                                                      |
+| -------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| Клиент   | React 19, Vite, **TypeScript 5.9.x**, styled-components 6.5.x, @tanstack/react-query 5, zod 4, lucide-react (только именованные импорты иконок) |
+| Сервер   | Node 22, Fastify, `ws` (через @fastify/websocket), zod, tsx (dev), esbuild-бандл (prod)                                                         |
+| Контракт | `packages/contracts` — zod-схемы и типы, общие для клиента и сервера                                                                            |
+| Тесты    | Vitest, @testing-library/react (точечно)                                                                                                        |
+| Качество | **ESLint 10.x** (flat, typescript-eslint 8, eslint-plugin-react-hooks 7), Prettier, `npm run size` (бюджет бандла)                              |
+| Прод     | Docker Compose, Nginx (статика + gzip, прокси `/api` и `/ws`)                                                                                   |
 
 Запрещено: UI-библиотеки и дизайн-системы (MUI, Ant, Radix-themes, Tailwind и т.п.), стейт-менеджеры
 (Redux, MobX, Zustand), axios, lodash, moment/date-fns, готовые tree/table/virtual-компоненты.
@@ -24,8 +24,9 @@
 
 **Версии пиним, «последнее» не ставим** (ADR 001): `typescript@latest` — это 7.x, который
 `typescript-eslint` ещё не поддерживает (`>=4.8.4 <6.1.0`); `eslint@latest` — 10.x, который не поддерживает
-`eslint-plugin-react`. Поэтому TypeScript 5.9.x и ESLint 9.39.x, а `eslint-plugin-react` не используется
-вовсе.
+`eslint-plugin-react`. Поэтому TypeScript 5.9.x. Сам `eslint-plugin-react` не используется вовсе — его
+единственное нужное правило закрывается ядром, и ровно поэтому доступен ESLint 10.x: плагин был
+единственным, что держало бы нас на 9.x.
 
 ## Структура
 
@@ -66,6 +67,7 @@ docs/                    # architecture.md, data-model.md, adr/, plan.md, ai-log
 Типы данных выводятся из zod-схем (`z.infer`), руками не дублируются.
 
 **Данные (ADR 002–004).**
+
 - Любой вход извне (HTTP-ответ, WS-сообщение, ответ AI) проходит zod-валидацию; невалидное = ошибка/игнор
   с логом, но не «как-нибудь отрисуем».
 - Сеть — только через `shared/api`; в `queryFn` всегда пробрасывается `signal`. `staleTime: 5_000`.
@@ -80,6 +82,7 @@ docs/                    # architecture.md, data-model.md, adr/, plan.md, ai-log
 - Всё в `entities/` — чистые функции без React и без побочных эффектов, покрыты unit-тестами.
 
 **UI и стили (ADR 005).**
+
 - Только styled-components. Никакого inline-CSS: проп `style` запрещён линтером — правилом ядра
   `no-restricted-syntax` с селектором `JSXAttribute[name.name='style']` (ловит и DOM-элементы, и компоненты,
   не требует `eslint-plugin-react`). Динамика — через transient-пропсы (`$tone`) с конечным набором значений

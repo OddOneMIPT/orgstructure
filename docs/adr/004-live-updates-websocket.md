@@ -41,19 +41,19 @@
 
 Порядок проверок: сначала «есть ли вообще модель», затем эпоха, и только при её совпадении — номер версии.
 
-| Событие              | Условие                                         | Действие                                          |
-| -------------------- | ----------------------------------------------- | ------------------------------------------------- |
-| любое                | модели ещё нет (идёт первая загрузка)           | игнор — снимок придёт с актуальной ревизией       |
+| Событие              | Условие                                         | Действие                                           |
+| -------------------- | ----------------------------------------------- | -------------------------------------------------- |
+| любое                | модели ещё нет (идёт первая загрузка)           | игнор — снимок придёт с актуальной ревизией        |
 | любое                | ревизия неизвестна (нет `ETag`, ADR 002)        | `invalidateQueries(orgTree)`; патчи не применяются |
-| любое                | `epoch !== model.epoch` (сервер перезапускался) | `invalidateQueries(orgTree)`; патч не применяется |
-| `hello`              | `version === model.version`                     | ничего — данные актуальны                         |
-| `hello`              | версии расходятся                               | `invalidateQueries(orgTree)`                      |
-| `patch`              | `version === model.version + 1`                 | `setQueryData(prev => applyPatch(prev, patch))`   |
-| `patch`              | `version <= model.version`                      | игнор (дубликат / уже учтено рефетчем)            |
-| `patch`              | разрыв (`> model.version + 1`)                  | `invalidateQueries(orgTree)` с `cache: 'reload'`  |
-| `patch`              | `applyPatch` вернул `null` (неизвестный `id`)   | `invalidateQueries(orgTree)`; в кэш не пишем      |
-| `reset`              | —                                               | `invalidateQueries(orgTree)`                      |
-| невалидное сообщение | —                                               | лог + игнор; 3 подряд → переподключение           |
+| любое                | `epoch !== model.epoch` (сервер перезапускался) | `invalidateQueries(orgTree)`; патч не применяется  |
+| `hello`              | `version === model.version`                     | ничего — данные актуальны                          |
+| `hello`              | версии расходятся                               | `invalidateQueries(orgTree)`                       |
+| `patch`              | `version === model.version + 1`                 | `setQueryData(prev => applyPatch(prev, patch))`    |
+| `patch`              | `version <= model.version`                      | игнор (дубликат / уже учтено рефетчем)             |
+| `patch`              | разрыв (`> model.version + 1`)                  | `invalidateQueries(orgTree)` с `cache: 'reload'`   |
+| `patch`              | `applyPatch` вернул `null` (неизвестный `id`)   | `invalidateQueries(orgTree)`; в кэш не пишем       |
+| `reset`              | —                                               | `invalidateQueries(orgTree)`                       |
+| невалидное сообщение | —                                               | лог + игнор; 3 подряд → переподключение            |
 
 Так кэш инвалидируется **только при реальном расхождении**, а штатный поток изменений не порождает запросов.
 Строка «модели ещё нет» стоит первой не случайно: во время первой загрузки `model` — `undefined`, и проверка
