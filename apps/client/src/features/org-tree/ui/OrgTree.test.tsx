@@ -114,4 +114,57 @@ describe('OrgTree', () => {
     expect(rowOf('Инфраструктура')).toHaveAttribute('aria-level', '2');
     expect(rowOf('Инфраструктура')).toHaveAttribute('aria-expanded', 'false');
   });
+
+  describe('клавиатура', () => {
+    it('в порядке табуляции ровно один узел', () => {
+      renderTree();
+
+      const items = screen.getAllByRole('treeitem');
+      expect(items.filter((item) => item.getAttribute('tabindex') === '0')).toHaveLength(1);
+    });
+
+    it('стрелка вправо раскрывает ветку, влево — сворачивает', async () => {
+      const user = userEvent.setup();
+      renderTree();
+
+      rowOf('Инфраструктура').focus();
+      await user.keyboard('{ArrowRight}');
+      expect(screen.getByText('Облако')).toBeInTheDocument();
+
+      await user.keyboard('{ArrowLeft}');
+      expect(screen.queryByText('Облако')).not.toBeInTheDocument();
+    });
+
+    it('стрелка влево на свёрнутом узле уводит к родителю', async () => {
+      const user = userEvent.setup();
+      renderTree();
+
+      rowOf('Инфраструктура').focus();
+      await user.keyboard('{ArrowLeft}');
+
+      expect(rowOf('Технологии')).toHaveAttribute('tabindex', '0');
+    });
+
+    it('стрелки вниз и вверх идут по видимым узлам', async () => {
+      const user = userEvent.setup();
+      renderTree();
+
+      rowOf('Технологии').focus();
+      await user.keyboard('{ArrowDown}');
+      expect(rowOf('Инфраструктура')).toHaveFocus();
+
+      await user.keyboard('{ArrowUp}');
+      expect(rowOf('Технологии')).toHaveFocus();
+    });
+
+    it('Enter выделяет узел', async () => {
+      const user = userEvent.setup();
+      renderTree();
+
+      rowOf('Инфраструктура').focus();
+      await user.keyboard('{Enter}');
+
+      expect(dashboardStore.getState().selectedId).toBe('dep');
+    });
+  });
 });

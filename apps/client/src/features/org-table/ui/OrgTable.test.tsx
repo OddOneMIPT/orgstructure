@@ -194,4 +194,46 @@ describe('OrgTable', () => {
 
     expect(scrollIntoView).toHaveBeenCalledWith({ block: 'nearest' });
   });
+
+  describe('клавиатура', () => {
+    it('в порядке табуляции ровно одна строка', () => {
+      renderTable();
+
+      const rows = screen.getAllByRole('row').slice(1);
+      expect(rows.filter((row) => row.getAttribute('tabindex') === '0')).toHaveLength(1);
+    });
+
+    it('стрелки перемещают фокус по строкам', async () => {
+      const user = userEvent.setup();
+      renderTable();
+
+      const first = screen.getByText('Коммерция').closest('tr')!;
+      first.focus();
+      await user.keyboard('{ArrowDown}');
+
+      expect(screen.getByText('Технологии').closest('tr')).toHaveFocus();
+    });
+
+    it('Home и End прыгают к краям списка', async () => {
+      const user = userEvent.setup();
+      renderTable();
+
+      screen.getByText('Коммерция').closest('tr')!.focus();
+      await user.keyboard('{End}');
+      expect(screen.getByText('Облако').closest('tr')).toHaveFocus();
+
+      await user.keyboard('{Home}');
+      expect(screen.getByText('Коммерция').closest('tr')).toHaveFocus();
+    });
+
+    it('Enter выделяет узел', async () => {
+      const user = userEvent.setup();
+      renderTable();
+
+      screen.getByText('Коммерция').closest('tr')!.focus();
+      await user.keyboard('{ArrowDown}{Enter}');
+
+      expect(dashboardStore.getState().selectedId).toBe('div-t');
+    });
+  });
 });

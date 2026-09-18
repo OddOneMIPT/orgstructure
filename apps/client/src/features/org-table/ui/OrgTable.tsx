@@ -10,6 +10,7 @@ import {
   formatPercent,
   levelLabel,
 } from '@/shared/lib/format';
+import { useRovingFocus } from '@/shared/lib/useRovingFocus';
 import { selectNode, useQuery, useSelectedId } from '@/shared/model/dashboardStore';
 import { Button, FlashValue, Panel, PerformanceBar, StateMessage } from '@/shared/ui';
 
@@ -62,6 +63,7 @@ const Table = styled.table`
 
 const Row = styled.tr`
   cursor: pointer;
+  outline-offset: -2px;
   /* Чтобы прокрутка не прятала строку под липкой шапкой. */
   scroll-margin-block-start: 34px;
 
@@ -119,6 +121,12 @@ export function OrgTable({ model, view }: OrgTableProps) {
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  const roving = useRovingFocus({
+    ids: useMemo(() => rows.map((row) => row.id), [rows]),
+    containerRef: scrollRef,
+    onActivate: selectNode,
+  });
+
   // Выделение приходит и из дерева: показываем строку, не трогая скролл, если она уже видна.
   useEffect(() => {
     if (selectedId === null) return undefined;
@@ -175,13 +183,15 @@ export function OrgTable({ model, view }: OrgTableProps) {
                 <TableHeaderCell column="performance" label="Ср. эффективность" sort={sort} />
               </tr>
             </thead>
-            <tbody>
+            <tbody onKeyDown={roving.onKeyDown}>
               {rows.map((row) => (
                 <Row
                   key={row.id}
                   data-node-id={row.id}
                   aria-selected={row.id === selectedId}
+                  {...roving.itemProps(row.id)}
                   onClick={() => {
+                    roving.setActiveId(row.id);
                     selectNode(row.id);
                   }}
                 >

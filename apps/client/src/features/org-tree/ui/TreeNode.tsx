@@ -114,13 +114,15 @@ const Group = styled.ul`
 export interface TreeNodeProps {
   id: OrgNodeId;
   depth: number;
+  /** Пропсы roving tabindex: в дереве в порядке табуляции ровно один узел. */
+  rovingProps: (id: OrgNodeId) => { tabIndex: number; 'data-roving-id': string };
 }
 
 /**
  * Пропсы — примитивы, а состояние раскрытия и выделения узел читает сам через селекторы,
  * поэтому `memo` действительно работает: раскрытие одной ветки не перерисовывает всё дерево.
  */
-export const TreeNode = memo(function TreeNode({ id, depth }: TreeNodeProps) {
+export const TreeNode = memo(function TreeNode({ id, depth, rovingProps }: TreeNodeProps) {
   const { model, view, query } = useContext(OrgTreeContext);
   const storeExpanded = useIsExpanded(id);
   const isSelected = useIsSelected(id);
@@ -148,6 +150,7 @@ export const TreeNode = memo(function TreeNode({ id, depth }: TreeNodeProps) {
       aria-level={depth + 1}
       aria-selected={isSelected}
       data-node-id={id}
+      {...rovingProps(id)}
       {...(hasChildren ? { 'aria-expanded': isExpanded } : {})}
     >
       <Row
@@ -205,7 +208,7 @@ export const TreeNode = memo(function TreeNode({ id, depth }: TreeNodeProps) {
       {hasChildren && isExpanded ? (
         <Group role="group">
           {children.map((childId) => (
-            <TreeNode key={childId} id={childId} depth={depth + 1} />
+            <TreeNode key={childId} id={childId} depth={depth + 1} rovingProps={rovingProps} />
           ))}
         </Group>
       ) : null}
