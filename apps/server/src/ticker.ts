@@ -48,6 +48,14 @@ export function createTicker({
         updatedAt,
         headcount: clamp(node.headcount + Math.round((random() - 0.5) * 6), 1, 200),
         performance: clamp(Math.round(node.performance + (random() - 0.5) * 20), 0, 100),
+        // Бюджет тоже обязан меняться: иначе колонка «Бюджет суммарный» никогда
+        // не подсвечивается, и дельта бюджета вверх по предкам не проверяется вживую.
+        // Шаг кратен 100 000 — в таблице видно, что число действительно другое.
+        budget: clamp(
+          node.budget + Math.round((random() - 0.5) * 6) * 100_000,
+          100_000,
+          100_000_000,
+        ),
       });
     }
 

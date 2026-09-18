@@ -79,7 +79,8 @@ export function useRovingFocus({
        * мышью или табом, и состояние на момент нажатия ещё не успело обновиться.
        * Событие же всегда рождается ровно на том элементе, который сейчас в фокусе.
        */
-      const origin = (event.target as HTMLElement | null)?.closest<HTMLElement>('[data-roving-id]');
+      const target = event.target instanceof HTMLElement ? event.target : null;
+      const origin = target?.closest<HTMLElement>('[data-roving-id]');
       const focused = origin?.dataset.rovingId;
       const active = focused !== undefined && ids.includes(focused) ? focused : current;
 

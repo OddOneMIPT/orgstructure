@@ -3,7 +3,9 @@ import { useEffect, useRef } from 'react';
 import styled from 'styled-components';
 
 import { parseSearchQuery } from '@/shared/api';
-import { setAiState, setQuery, useAiSearch, useQuery } from '@/shared/model/dashboardStore';
+import { setQuery, useQuery } from '@/shared/model/dashboardStore';
+
+import { resetAiState, setAiState, useAiSearch } from '../model/aiSearchStore';
 import { Spinner } from '@/shared/ui';
 
 const Wrapper = styled.div`
@@ -71,6 +73,17 @@ export function SearchField() {
   const ai = useAiSearch();
   const request = useRef<AbortController | null>(null);
 
+  /**
+   * Правка строки отменяет незавершённый разбор. Без этого ответ на прежний
+   * запрос приходил уже после того, как пользователь переписал строку, и
+   * включал фильтр поверх нового текста: `setQuery` сбрасывает состояние в
+   * `idle`, но сам запрос продолжал лететь.
+   */
+  useEffect(() => {
+    request.current?.abort();
+    request.current = null;
+  }, [query]);
+
   useEffect(
     () => () => {
       request.current?.abort();
@@ -117,11 +130,14 @@ export function SearchField() {
         aria-label="Поиск подразделения: по названию или запросом на естественном языке"
         onChange={(event) => {
           setQuery(event.target.value);
+          // Разобранный фильтр относился к прежнему тексту — правило фичи, а не стора.
+          resetAiState();
         }}
         onKeyDown={(event) => {
           if (event.key === 'Escape') {
             event.preventDefault();
             setQuery('');
+            resetAiState();
             return;
           }
 
@@ -137,6 +153,7 @@ export function SearchField() {
           aria-label="Очистить поиск"
           onClick={() => {
             setQuery('');
+            resetAiState();
           }}
         >
           <X size={15} aria-hidden />

@@ -185,7 +185,7 @@ describe('OrgTable', () => {
     renderTable(selectFilteredView(model, createNamePredicate('такого нет')));
 
     expect(screen.getByText(/ничего не найдено/i)).toBeInTheDocument();
-    expect(screen.queryByRole('table')).not.toBeInTheDocument();
+    expect(screen.queryByRole('grid')).not.toBeInTheDocument();
   });
 
   it('прокручивает таблицу к узлу, выбранному в дереве', async () => {

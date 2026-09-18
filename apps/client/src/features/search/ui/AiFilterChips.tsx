@@ -2,7 +2,7 @@ import { Sparkles, X } from 'lucide-react';
 import styled from 'styled-components';
 
 import { describeFilter } from '@/entities/org';
-import { setAiState, useAiSearch } from '@/shared/model/dashboardStore';
+import { setAiState, useAiSearch } from '../model/aiSearchStore';
 
 const Bar = styled.div`
   display: flex;

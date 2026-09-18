@@ -19,10 +19,9 @@ export interface TableRow {
   name: string;
   depth: number;
   aggregate: Aggregate;
-  /** Собственный штат узла — для колонки «3 / 128» и тултипа. */
+  /** Собственный штат узла — для тултипа «своих / всего». */
   ownHeadcount: number;
-  ownBudget: number;
-  updatedAt: string;
+  /** Узел подошёл под фильтр сам, а не попал в список как предок совпадения. */
   isMatched: boolean;
 }
 
@@ -84,8 +83,6 @@ export function selectRows(model: OrgModel, { view, sort }: SelectRowsOptions): 
       depth,
       aggregate,
       ownHeadcount: node.headcount,
-      ownBudget: node.budget,
-      updatedAt: node.updatedAt,
       isMatched: view.isActive && view.matched.has(id),
     };
   };

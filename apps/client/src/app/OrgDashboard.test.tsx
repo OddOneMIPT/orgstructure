@@ -79,21 +79,21 @@ describe('OrgDashboard', () => {
     fetchOrgTreeMock.mockResolvedValue(ok([node('div', null, 'Технологии')]));
     renderDashboard();
 
-    expect(await screen.findByRole('table')).toBeInTheDocument();
+    expect(await screen.findByRole('grid')).toBeInTheDocument();
     expect(screen.getByText('Технологии')).toBeInTheDocument();
   });
 
   it('на узком экране переключается на дерево', async () => {
     fetchOrgTreeMock.mockResolvedValue(ok([node('div', null, 'Технологии')]));
     renderDashboard();
-    await screen.findByRole('table');
+    await screen.findByRole('grid');
 
     act(() => {
       setView('tree');
     });
 
     expect(screen.getByRole('tree')).toBeInTheDocument();
-    expect(screen.queryByRole('table')).not.toBeInTheDocument();
+    expect(screen.queryByRole('grid')).not.toBeInTheDocument();
   });
 
   it('показывает пустое состояние на пустой ответ', async () => {
@@ -101,7 +101,7 @@ describe('OrgDashboard', () => {
     renderDashboard();
 
     expect(await screen.findByText(/орг-структура пуста/i)).toBeInTheDocument();
-    expect(screen.queryByRole('table')).not.toBeInTheDocument();
+    expect(screen.queryByRole('grid')).not.toBeInTheDocument();
   });
 
   it('показывает ошибку сервера с кодом ответа', async () => {
@@ -142,7 +142,7 @@ describe('OrgDashboard', () => {
 
     resolveRetry?.(ok([node('div', null, 'Технологии')]));
 
-    expect(await screen.findByRole('table')).toBeInTheDocument();
+    expect(await screen.findByRole('grid')).toBeInTheDocument();
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 

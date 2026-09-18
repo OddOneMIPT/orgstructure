@@ -99,6 +99,10 @@ export const motion = (...args: Parameters<typeof css>) => css`
   }
 `;
 
+/**
+ * Единственное место, где задана обводка фокуса. Там, где её нужно увести внутрь
+ * (строка таблицы, строка дерева), после хелпера переопределяется `outline-offset`.
+ */
 export const focusRing = css`
   outline: 2px solid ${({ theme: t }) => t.colors.focus};
   outline-offset: 1px;

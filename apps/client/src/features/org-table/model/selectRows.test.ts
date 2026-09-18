@@ -60,7 +60,6 @@ describe('порядок по умолчанию', () => {
 
     expect(row?.aggregate.headcount).toBe(13);
     expect(row?.ownHeadcount).toBe(3);
-    expect(row?.ownBudget).toBe(7_000_000);
   });
 });
 

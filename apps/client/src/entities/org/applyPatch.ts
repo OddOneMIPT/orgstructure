@@ -9,7 +9,6 @@ interface Delta {
   perfWeight: number;
 }
 
-const ZERO: Delta = { headcount: 0, budget: 0, perfWeight: 0 };
 
 const isZero = (delta: Delta): boolean =>
   delta.headcount === 0 && delta.budget === 0 && delta.perfWeight === 0;
@@ -91,4 +90,3 @@ export function applyPatch(
   return { ...model, revision, byId, aggregates };
 }
 
-export const ZERO_DELTA = ZERO;

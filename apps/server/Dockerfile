@@ -32,5 +32,6 @@ COPY --from=build /app/apps/server/dist apps/server/dist
 USER node
 
 EXPOSE 3000
-# Через shell, чтобы Node получил сигналы от Docker напрямую (PID 1 — это node).
+# Exec-форма, а не через shell: тогда PID 1 — сам node и он получает SIGTERM от Docker.
+# Shell-форма поставила бы первым процессом /bin/sh, и сигналы до node не дошли бы.
 CMD ["node", "apps/server/dist/index.js"]

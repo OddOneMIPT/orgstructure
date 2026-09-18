@@ -1,8 +1,11 @@
 import { EMPTY_FILTER, type SearchFilter } from '@org/contracts';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { parseEnv } from '../env.js';
-import { parseSearchQuery } from './parseSearchQuery.js';
+import { parseSearchQuery, resetSearchCache } from './parseSearchQuery.js';
+
+// Кэш и SDK-клиент живут на весь процесс — между тестами их надо обнулять.
+beforeEach(resetSearchCache);
 
 const env = (source: NodeJS.ProcessEnv = { ANTHROPIC_API_KEY: 'test-key' }) => parseEnv(source);
 
@@ -83,6 +86,38 @@ describe('parseSearchQuery', () => {
       filter: null,
       reason: expect.stringMatching(/не удалось извлечь/),
     });
+  });
+
+  it('повторный запрос берётся из кэша и в модель не идёт', async () => {
+    const client = clientReturning(filter({ levels: ['team'] }));
+
+    const first = await parseSearchQuery({ env: env(), query: 'команды', client });
+    const second = await parseSearchQuery({ env: env(), query: 'команды', client });
+
+    expect(second).toEqual(first);
+    expect(client.parse).toHaveBeenCalledTimes(1);
+  });
+
+  it('смена модели обнуляет попадание в кэш: разбор делала другая модель', async () => {
+    const client = clientReturning(filter({ levels: ['team'] }));
+
+    await parseSearchQuery({ env: env(), query: 'команды', client });
+    await parseSearchQuery({
+      env: env({ ANTHROPIC_API_KEY: 'test-key', AI_MODEL: 'claude-opus-5' }),
+      query: 'команды',
+      client,
+    });
+
+    expect(client.parse).toHaveBeenCalledTimes(2);
+  });
+
+  it('fallback не кэшируется: причина могла быть временной', async () => {
+    const client = { parse: vi.fn().mockRejectedValue(new Error('сеть')) };
+
+    await parseSearchQuery({ env: env(), query: 'отделы', client });
+    await parseSearchQuery({ env: env(), query: 'отделы', client });
+
+    expect(client.parse).toHaveBeenCalledTimes(2);
   });
 
   it('фильтр только с сортировкой считается пустым — фильтровать нечего', async () => {

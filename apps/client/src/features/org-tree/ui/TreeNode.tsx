@@ -3,7 +3,7 @@ import { memo, useContext } from 'react';
 import styled from 'styled-components';
 
 import { performanceTone, splitByMatch, type OrgNodeId } from '@/entities/org';
-import { motion } from '@/shared/config/theme';
+import { focusRing, motion } from '@/shared/config/theme';
 import { describeStaff, formatBudget, formatStaff } from '@/shared/lib/format';
 import { toggleNode as toggleSelection, useIsSelected } from '@/shared/model/dashboardStore';
 import { FlashValue, PerformanceBar } from '@/shared/ui';
@@ -144,7 +144,7 @@ const Item = styled.li`
   }
 
   &:focus-visible > ${Row} {
-    outline: 2px solid ${({ theme }) => theme.colors.focus};
+    ${focusRing}
     outline-offset: -2px;
   }
 `;

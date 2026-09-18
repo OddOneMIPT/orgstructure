@@ -15,9 +15,8 @@ import { OrgTree } from '@/features/org-tree';
 import { HttpError, NetworkError, ValidationError } from '@/shared/api';
 import { useDebouncedValue } from '@/shared/lib/useDebouncedValue';
 import { useMediaQuery } from '@/shared/lib/useMediaQuery';
-import { AiFilterChips } from '@/features/search';
+import { AiFilterChips, useAiSearch } from '@/features/search';
 import {
-  useAiSearch,
   useKeyboardPanel,
   usePanelView,
   useQuery,
