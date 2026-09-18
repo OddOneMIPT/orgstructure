@@ -131,7 +131,13 @@ npm run dev          # сервер :3000 и клиент :8080 одной ко�
 
 ![AI-поиск без ключа: честный откат на текстовый поиск](docs/screenshots/step4-ai-fallback.jpg)
 
-**Размер сборки:** 414,7 КБ raw → **126,6 КБ gzip** при бюджете 200 КБ (63%). Замерено `npm run size`.
+**Размер сборки:** 414,7 КиБ raw → **126,6 КиБ gzip** при бюджете 200 КиБ (63%). Замерено `npm run size`;
+Vite печатает те же байты в килобайтах по 1000 — отсюда 424,5 kB и 131 kB на скриншоте.
+
+![Вывод сборки с размером бандла](docs/screenshots/bundle-size.png)
+
+Запись работы целиком (54 c): [`docs/screenshots/ai-search.mov`](docs/screenshots/ai-search.mov).
+Заметки автора о ходе работы — в [`README_FOR_HUMAN.md`](README_FOR_HUMAN.md).
 
 ### Что осознанно не сделано
 
