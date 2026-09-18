@@ -5,7 +5,7 @@
   "type": "module",
   "description": "Mock-сервер орг-структуры",
   "scripts": {
-    "dev": "tsx watch src/main.ts",
+    "dev": "tsx watch --env-file-if-exists=../../.env src/main.ts",
     "start": "node dist/index.js",
     "typecheck": "tsc -p tsconfig.json",
     "build": "node build.mjs && node smoke.mjs"
