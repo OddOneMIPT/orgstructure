@@ -1,7 +1,8 @@
-import { OrgTreeResponseSchema, parseRevision, type OrgNode } from '@org/contracts';
 import type { FastifyInstance } from 'fastify';
 import type { Response as InjectResponse } from 'light-my-request';
 import { afterEach, describe, expect, it } from 'vitest';
+
+import { type OrgNode, OrgTreeResponseSchema, parseRevision } from '@org/contracts';
 
 import { buildServer } from './app.js';
 import { parseEnv } from './env.js';
@@ -162,7 +163,18 @@ describe('parseEnv', () => {
       HOST: '0.0.0.0',
       MOCK_DEBUG: false,
       TICK_INTERVAL_MS: 3_000,
+      AI_MODEL: 'claude-sonnet-5',
+      AI_TIMEOUT_MS: 8_000,
     });
+  });
+
+  it('пустая строка — это «не задано», а не пустое значение', () => {
+    // docker compose подставляет ${ANTHROPIC_API_KEY:-} всегда, а .env из примера — пустым.
+    const env = parseEnv({ ANTHROPIC_API_KEY: '', AI_MODEL: '', TICK_INTERVAL_MS: '' });
+
+    expect(env.ANTHROPIC_API_KEY).toBeUndefined();
+    expect(env.AI_MODEL).toBe('claude-sonnet-5');
+    expect(env.TICK_INTERVAL_MS).toBe(3_000);
   });
 
   it('читает MOCK_DEBUG', () => {

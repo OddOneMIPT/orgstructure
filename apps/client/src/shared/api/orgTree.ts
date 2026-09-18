@@ -1,4 +1,4 @@
-import { OrgTreeResponseSchema, parseRevision, type OrgNode, type Revision } from '@org/contracts';
+import { type OrgNode, OrgTreeResponseSchema, parseRevision, type Revision } from '@org/contracts';
 
 import { HttpError, NetworkError, ValidationError } from './errors';
 

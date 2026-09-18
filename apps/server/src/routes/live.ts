@@ -1,5 +1,6 @@
-import type { ServerMessage } from '@org/contracts';
 import type { FastifyInstance } from 'fastify';
+
+import type { ServerMessage } from '@org/contracts';
 
 import type { OrgStore } from '../store.js';
 

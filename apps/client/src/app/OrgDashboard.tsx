@@ -4,18 +4,20 @@ import styled from 'styled-components';
 
 import {
   ALL_VISIBLE,
+  createFilterPredicate,
   createNamePredicate,
-  selectFilteredView,
   IntegrityError,
+  selectFilteredView,
   useOrgModel,
 } from '@/entities/org';
 import { OrgTable } from '@/features/org-table';
 import { OrgTree } from '@/features/org-tree';
+import { AiFilterChips, useAiSearch } from '@/features/search';
 import { HttpError, NetworkError, ValidationError } from '@/shared/api';
+import { theme } from '@/shared/config/theme';
 import { useDebouncedValue } from '@/shared/lib/useDebouncedValue';
 import { useMediaQuery } from '@/shared/lib/useMediaQuery';
-import { useKeyboardPanel, usePanelView, useQuery } from '@/shared/model/dashboardStore';
-import { theme } from '@/shared/config/theme';
+import { useKeyboardPanel, usePanelView, useSearchQuery } from '@/shared/model/dashboardStore';
 import { Button, Panel, Skeleton, Spinner, StateMessage } from '@/shared/ui';
 
 /** Задание: дебаунс фильтра 250 мс. */
@@ -113,18 +115,29 @@ export function describeError(error: Error): { title: string; description: strin
 
 export function OrgDashboard() {
   const { data: model, error, failureReason, isFetching, refetch } = useOrgModel();
-  const query = useQuery();
+  const query = useSearchQuery();
   const panelView = usePanelView();
   const keyboardPanel = useKeyboardPanel();
+  const ai = useAiSearch();
   const isSplit = useMediaQuery(`(min-width: ${theme.layout.split})`);
 
   // Фильтруем по отложенному значению, а поле ввода живёт мгновенным.
   const debouncedQuery = useDebouncedValue(query, FILTER_DEBOUNCE_MS);
 
-  const view = useMemo(
-    () => (model ? selectFilteredView(model, createNamePredicate(debouncedQuery)) : null),
-    [model, debouncedQuery],
-  );
+  /**
+   * Разобранный AI-фильтр подставляется в тот же предикат, что и текстовый поиск,
+   * поэтому фильтрует оба представления одинаково (ADR 007).
+   */
+  const view = useMemo(() => {
+    if (!model) return null;
+
+    const predicate =
+      ai.status === 'applied'
+        ? createFilterPredicate(ai.filter)
+        : createNamePredicate(debouncedQuery);
+
+    return selectFilteredView(model, predicate);
+  }, [model, ai, debouncedQuery]);
 
   /**
    * `error` выставляется только когда попытки исчерпаны. Между ними, а также пока
@@ -209,6 +222,7 @@ export function OrgDashboard() {
 
   return (
     <Content>
+      <AiFilterChips />
       {currentError ? (
         <BackgroundError role="status">
           <CircleAlert size={14} aria-hidden />

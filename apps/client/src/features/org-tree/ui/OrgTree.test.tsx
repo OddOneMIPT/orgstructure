@@ -1,8 +1,9 @@
-import type { OrgNode } from '@org/contracts';
 import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ThemeProvider } from 'styled-components';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import type { OrgNode } from '@org/contracts';
 
 import { ALL_VISIBLE, buildModel } from '@/entities/org';
 import { theme } from '@/shared/config/theme';
@@ -58,6 +59,7 @@ const isHidden = (name: string): boolean => rowOf(name).closest('[aria-hidden="t
 beforeEach(() => {
   treeUiStore.setState(() => ({ expanded: new Set(), initializedFor: null }));
   dashboardStore.setState(() => ({
+    ai: { status: 'idle' },
     keyboardPanel: 'table',
     query: '',
     selectedId: null,

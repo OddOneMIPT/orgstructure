@@ -2,7 +2,7 @@ import { ListRestart, SearchX } from 'lucide-react';
 import { useEffect, useMemo, useRef } from 'react';
 import styled from 'styled-components';
 
-import { performanceTone, splitByMatch, type FilteredView, type OrgModel } from '@/entities/org';
+import { type FilteredView, type OrgModel, performanceTone, splitByMatch } from '@/entities/org';
 import {
   describeStaff,
   formatBudget,
@@ -15,7 +15,7 @@ import {
   claimKeyboard,
   selectNode,
   toggleNode,
-  useQuery,
+  useSearchQuery,
   useSelectedId,
 } from '@/shared/model/dashboardStore';
 import { Button, FlashValue, Panel, PerformanceBar, StateMessage } from '@/shared/ui';
@@ -50,7 +50,7 @@ const Scroll = styled.div`
   overflow: auto;
 `;
 
-const Table = styled.table`
+const Table = styled.table.attrs({ role: 'grid' })`
   width: 100%;
   border-collapse: collapse;
   font-size: ${({ theme }) => theme.font.size.md};
@@ -86,7 +86,7 @@ const Row = styled.tr`
  * `&&` поднимает специфичность: иначе общее правило `td` из Table перебивает отступ,
  * и уровни в колонке «Подразделение» перестают читаться.
  */
-const NameCell = styled.td<{ $depth: number }>`
+const NameCell = styled.td.attrs({ role: 'gridcell' })<{ $depth: number }>`
   && {
     max-width: 0;
     width: 40%;
@@ -104,11 +104,11 @@ const NameCell = styled.td<{ $depth: number }>`
   }
 `;
 
-const Level = styled.td`
+const Level = styled.td.attrs({ role: 'gridcell' })`
   color: ${({ theme }) => theme.colors.textMuted};
 `;
 
-const PerformanceCell = styled.td`
+const PerformanceCell = styled.td.attrs({ role: 'gridcell' })`
   width: 140px;
 `;
 
@@ -121,7 +121,7 @@ export interface OrgTableProps {
 
 export function OrgTable({ model, view, claimsArrows = false }: OrgTableProps) {
   const sort = useSort();
-  const query = useQuery();
+  const query = useSearchQuery();
   const selectedId = useSelectedId();
 
   // Пересчёт только при смене модели, фильтра или сортировки.
@@ -218,7 +218,7 @@ export function OrgTable({ model, view, claimsArrows = false }: OrgTableProps) {
                   }}
                 >
                   <NameCell $depth={sort ? 0 : Math.min(row.depth, MAX_INDENT_DEPTH)}>
-                    {splitByMatch(row.name, view.isActive ? query : '').map((part, index) =>
+                    {splitByMatch(row.name, row.isMatched ? query : '').map((part, index) =>
                       part.matched ? (
                         <mark key={index}>{part.text}</mark>
                       ) : (
@@ -230,6 +230,7 @@ export function OrgTable({ model, view, claimsArrows = false }: OrgTableProps) {
                   {/* Колонка так и называется — «Всего сотрудников»: здесь только сумма
                       по поддереву. Разбивка «своих / всего» осталась в дереве. */}
                   <td
+                    role="gridcell"
                     data-align="right"
                     title={describeStaff(row.ownHeadcount, row.aggregate.headcount)}
                   >
@@ -237,7 +238,7 @@ export function OrgTable({ model, view, claimsArrows = false }: OrgTableProps) {
                       {formatCount(row.aggregate.headcount)}
                     </FlashValue>
                   </td>
-                  <td data-align="right">
+                  <td role="gridcell" data-align="right">
                     <FlashValue value={row.aggregate.budget}>
                       {formatBudget(row.aggregate.budget)}
                     </FlashValue>

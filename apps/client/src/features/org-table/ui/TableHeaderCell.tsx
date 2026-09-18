@@ -4,7 +4,7 @@ import styled from 'styled-components';
 import type { Sort, SortColumn } from '../model/selectRows';
 import { sortAscending, sortDescending } from '../model/tableUiStore';
 
-const Cell = styled.th`
+const Cell = styled.th.attrs({ role: 'columnheader' })`
   position: sticky;
   top: 0;
   z-index: 1;

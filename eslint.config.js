@@ -1,5 +1,6 @@
 import js from '@eslint/js';
 import reactHooks from 'eslint-plugin-react-hooks';
+import simpleImportSort from 'eslint-plugin-simple-import-sort';
 import tseslint from 'typescript-eslint';
 
 /**
@@ -31,7 +32,17 @@ export default tseslint.config(
     languageOptions: {
       parserOptions: { projectService: true, tsconfigRootDir: import.meta.dirname },
     },
+    // Порядок импортов был «договорённостью», которую никто не проверял, и он разъезжался.
+    // Теперь это правило с автопочинкой: внешние → @/… → относительные.
+    plugins: { 'simple-import-sort': simpleImportSort },
     rules: {
+      'simple-import-sort/imports': [
+        'error',
+        {
+          groups: [['^\\u0000'], ['^node:', '^@?\\w'], ['^@org/'], ['^@/'], ['^\\.']],
+        },
+      ],
+      'simple-import-sort/exports': 'error',
       // Типы проверяет TypeScript; в TS-файлах правило только шумит на DOM/Node-глобалях.
       'no-undef': 'off',
       'no-restricted-syntax': ['error', noInlineStyle],
@@ -84,7 +95,8 @@ export default tseslint.config(
   },
 
   {
-    files: ['scripts/**/*.mjs', 'eslint.config.js'],
+    // Сборочные скрипты — обычный JS вне TS-проекта: типизированные правила к ним неприменимы.
+    files: ['**/*.mjs', 'eslint.config.js'],
     ...tseslint.configs.disableTypeChecked,
   },
 );

@@ -1,16 +1,15 @@
 import { SearchX } from 'lucide-react';
 import { useEffect, useMemo, useRef } from 'react';
-
-import { useStore } from '@/shared/lib/createStore';
 import styled from 'styled-components';
 
-import { isVisible, type FilteredView, type OrgModel, type OrgNodeId } from '@/entities/org';
+import { type FilteredView, isVisible, type OrgModel, type OrgNodeId } from '@/entities/org';
+import { useStore } from '@/shared/lib/createStore';
 import { useRovingFocus } from '@/shared/lib/useRovingFocus';
 import {
   claimKeyboard,
   selectNode,
   toggleNode as toggleSelection,
-  useQuery,
+  useSearchQuery,
   useSelectedId,
 } from '@/shared/model/dashboardStore';
 import { Button, Panel, StateMessage } from '@/shared/ui';
@@ -20,8 +19,8 @@ import {
   expandAll,
   expandAncestors,
   initializeExpanded,
-  treeUiStore,
   toggleNode,
+  treeUiStore,
   useExpandedCount,
 } from '../model/treeUiStore';
 import { OrgTreeContext } from './OrgTreeContext';
@@ -124,7 +123,7 @@ export function OrgTree({ model, view, claimsArrows = false }: OrgTreeProps) {
   const expandedCount = useExpandedCount();
   const expandedIds = useStore(treeUiStore, (state) => state.expanded);
   const selectedId = useSelectedId();
-  const query = useQuery();
+  const query = useSearchQuery();
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const roots = useMemo(() => model.roots.filter((id) => isVisible(view, id)), [model.roots, view]);

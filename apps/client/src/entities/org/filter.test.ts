@@ -1,5 +1,6 @@
-import type { OrgNode } from '@org/contracts';
 import { describe, expect, it } from 'vitest';
+
+import type { OrgNode } from '@org/contracts';
 
 import { buildModel } from './buildModel';
 import { createNamePredicate, isVisible, selectFilteredView, splitByMatch } from './filter';

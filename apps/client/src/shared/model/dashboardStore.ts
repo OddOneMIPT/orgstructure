@@ -54,7 +54,7 @@ export function setView(view: PanelView): void {
   dashboardStore.setState((prev) => (prev.view === view ? prev : { ...prev, view }));
 }
 
-export const useQuery = (): string => useStore(dashboardStore, (state) => state.query);
+export const useSearchQuery = (): string => useStore(dashboardStore, (state) => state.query);
 
 export const useSelectedId = (): string | null =>
   useStore(dashboardStore, (state) => state.selectedId);

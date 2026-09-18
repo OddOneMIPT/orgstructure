@@ -1,7 +1,8 @@
-import { parseServerMessage, type OrgNode, type ServerMessage } from '@org/contracts';
 import type { FastifyInstance } from 'fastify';
 import { afterEach, describe, expect, it } from 'vitest';
 import WebSocket from 'ws';
+
+import { type OrgNode, parseServerMessage, type ServerMessage } from '@org/contracts';
 
 import { buildServer } from '../app.js';
 import { parseEnv } from '../env.js';

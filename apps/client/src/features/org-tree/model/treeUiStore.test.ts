@@ -1,5 +1,6 @@
-import type { OrgNode } from '@org/contracts';
 import { beforeEach, describe, expect, it } from 'vitest';
+
+import type { OrgNode } from '@org/contracts';
 
 import { buildModel } from '@/entities/org';
 

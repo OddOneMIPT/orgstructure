@@ -1,4 +1,3 @@
-import type { OrgNode } from '@org/contracts';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -6,10 +5,12 @@ import type { ReactNode } from 'react';
 import { ThemeProvider } from 'styled-components';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import type { OrgNode } from '@org/contracts';
+
 import { treeUiStore } from '@/features/org-tree';
-import { dashboardStore, setView } from '@/shared/model/dashboardStore';
-import { HttpError, fetchOrgTree, type OrgTreeFetchResult } from '@/shared/api';
+import { fetchOrgTree, HttpError, type OrgTreeFetchResult } from '@/shared/api';
 import { theme } from '@/shared/config/theme';
+import { dashboardStore, setView } from '@/shared/model/dashboardStore';
 
 import { OrgDashboard } from './OrgDashboard';
 import { createQueryClient } from './queryClient';
@@ -55,6 +56,7 @@ beforeEach(() => {
   fetchOrgTreeMock.mockReset();
   treeUiStore.setState(() => ({ expanded: new Set(), initializedFor: null }));
   dashboardStore.setState(() => ({
+    ai: { status: 'idle' },
     keyboardPanel: 'table',
     query: '',
     selectedId: null,
@@ -78,21 +80,21 @@ describe('OrgDashboard', () => {
     fetchOrgTreeMock.mockResolvedValue(ok([node('div', null, 'Технологии')]));
     renderDashboard();
 
-    expect(await screen.findByRole('table')).toBeInTheDocument();
+    expect(await screen.findByRole('grid')).toBeInTheDocument();
     expect(screen.getByText('Технологии')).toBeInTheDocument();
   });
 
   it('на узком экране переключается на дерево', async () => {
     fetchOrgTreeMock.mockResolvedValue(ok([node('div', null, 'Технологии')]));
     renderDashboard();
-    await screen.findByRole('table');
+    await screen.findByRole('grid');
 
     act(() => {
       setView('tree');
     });
 
     expect(screen.getByRole('tree')).toBeInTheDocument();
-    expect(screen.queryByRole('table')).not.toBeInTheDocument();
+    expect(screen.queryByRole('grid')).not.toBeInTheDocument();
   });
 
   it('показывает пустое состояние на пустой ответ', async () => {
@@ -100,7 +102,7 @@ describe('OrgDashboard', () => {
     renderDashboard();
 
     expect(await screen.findByText(/орг-структура пуста/i)).toBeInTheDocument();
-    expect(screen.queryByRole('table')).not.toBeInTheDocument();
+    expect(screen.queryByRole('grid')).not.toBeInTheDocument();
   });
 
   it('показывает ошибку сервера с кодом ответа', async () => {
@@ -141,7 +143,7 @@ describe('OrgDashboard', () => {
 
     resolveRetry?.(ok([node('div', null, 'Технологии')]));
 
-    expect(await screen.findByRole('table')).toBeInTheDocument();
+    expect(await screen.findByRole('grid')).toBeInTheDocument();
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 

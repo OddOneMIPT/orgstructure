@@ -1,5 +1,7 @@
 import { createGlobalStyle } from 'styled-components';
 
+import { focusRing } from '@/shared/config/theme';
+
 export const GlobalStyle = createGlobalStyle`
   *,
   *::before,
@@ -43,7 +45,6 @@ export const GlobalStyle = createGlobalStyle`
   }
 
   :focus-visible {
-    outline: 2px solid ${({ theme }) => theme.colors.focus};
-    outline-offset: 1px;
+    ${focusRing}
   }
 `;

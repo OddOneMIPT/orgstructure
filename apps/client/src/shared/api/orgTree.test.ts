@@ -1,5 +1,6 @@
-import type { OrgNode } from '@org/contracts';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+
+import type { OrgNode } from '@org/contracts';
 
 import { HttpError, NetworkError, ValidationError } from './errors';
 import { fetchOrgTree } from './orgTree';

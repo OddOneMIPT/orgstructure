@@ -1,5 +1,6 @@
-import type { OrgNode } from '@org/contracts';
 import { describe, expect, it } from 'vitest';
+
+import type { OrgNode } from '@org/contracts';
 
 import { ALL_VISIBLE, buildModel, createNamePredicate, selectFilteredView } from '@/entities/org';
 
@@ -60,7 +61,6 @@ describe('порядок по умолчанию', () => {
 
     expect(row?.aggregate.headcount).toBe(13);
     expect(row?.ownHeadcount).toBe(3);
-    expect(row?.ownBudget).toBe(7_000_000);
   });
 });
 

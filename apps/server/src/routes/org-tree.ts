@@ -1,6 +1,7 @@
-import { formatRevision, type OrgNode } from '@org/contracts';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
+
+import { formatRevision } from '@org/contracts';
 
 import type { Env } from '../env.js';
 import type { OrgStore } from '../store.js';
@@ -61,9 +62,11 @@ export function registerOrgTreeRoute(
     }
 
     if (debug.invalid) {
-      // Нарушает схему: performance вне диапазона и лишнее поле.
+      // Нарушает схему намеренно: performance вне диапазона и лишнее поле.
+      // Тип `unknown` вместо приведения к OrgNode — объект и не должен им быть,
+      // приведение лишь глушило бы компилятор там, где он прав.
       const [first] = snapshot.nodes;
-      const broken = { ...first, performance: 1000, unexpected: true } as unknown as OrgNode;
+      const broken: unknown = { ...first, performance: 1000, unexpected: true };
       return reply.send([broken, ...snapshot.nodes.slice(1)]);
     }
 

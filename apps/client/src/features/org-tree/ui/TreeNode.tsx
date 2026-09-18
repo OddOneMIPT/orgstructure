@@ -2,8 +2,8 @@ import { ChevronRight } from 'lucide-react';
 import { memo, useContext } from 'react';
 import styled from 'styled-components';
 
-import { performanceTone, splitByMatch, type OrgNodeId } from '@/entities/org';
-import { motion } from '@/shared/config/theme';
+import { type OrgNodeId, performanceTone, splitByMatch } from '@/entities/org';
+import { focusRing, motion } from '@/shared/config/theme';
 import { describeStaff, formatBudget, formatStaff } from '@/shared/lib/format';
 import { toggleNode as toggleSelection, useIsSelected } from '@/shared/model/dashboardStore';
 import { FlashValue, PerformanceBar } from '@/shared/ui';
@@ -144,7 +144,7 @@ const Item = styled.li`
   }
 
   &:focus-visible > ${Row} {
-    outline: 2px solid ${({ theme }) => theme.colors.focus};
+    ${focusRing}
     outline-offset: -2px;
   }
 `;
@@ -157,8 +157,11 @@ export interface TreeNodeProps {
 }
 
 /**
- * Пропсы — примитивы, а состояние раскрытия и выделения узел читает сам через селекторы,
- * поэтому `memo` действительно работает: раскрытие одной ветки не перерисовывает всё дерево.
+ * Пропсы — примитивы, а раскрытие и выделение узел читает сам через селекторы, поэтому
+ * раскрытие одной ветки не перерисовывает дерево целиком.
+ *
+ * Оговорка: модель узел берёт из контекста, а она меняется на каждом живом патче — значит
+ * на патче перерисовываются все узлы, и `memo` от этого не спасает (см. `OrgTreeContext`).
  */
 export const TreeNode = memo(function TreeNode({ id, depth, rovingProps }: TreeNodeProps) {
   const { model, view, query } = useContext(OrgTreeContext);

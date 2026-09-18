@@ -1,10 +1,10 @@
 import styled from 'styled-components';
 
-import { setView, usePanelView, type PanelView } from '@/shared/model/dashboardStore';
+import { type PanelView, setView, usePanelView } from '@/shared/model/dashboardStore';
 
 const List = styled.div`
   display: inline-flex;
-  padding: 2px;
+  padding: ${({ theme }) => theme.spacing.xxs};
   border: 1px solid ${({ theme }) => theme.colors.border};
   border-radius: ${({ theme }) => theme.radii.sm};
   background: ${({ theme }) => theme.colors.surfaceMuted};

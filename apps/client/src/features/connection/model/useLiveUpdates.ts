@@ -1,12 +1,13 @@
-import type { ServerMessage } from '@org/contracts';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState } from 'react';
+
+import type { ServerMessage } from '@org/contracts';
 
 import { applyPatch, ORG_TREE_KEY, type OrgModel } from '@/entities/org';
 
 import {
-  createLiveConnection,
   type ConnectionState,
+  createLiveConnection,
   type LiveConnection,
 } from './createLiveConnection';
 

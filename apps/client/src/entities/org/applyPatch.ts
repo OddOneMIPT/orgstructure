@@ -1,6 +1,6 @@
 import type { NodeChange, OrgNode, OrgNodeId, Revision } from '@org/contracts';
 
-import { averageOf, contributionOf, type Aggregate } from './aggregate';
+import { type Aggregate, averageOf, contributionOf } from './aggregate';
 import type { OrgModel } from './types';
 
 interface Delta {
@@ -8,8 +8,6 @@ interface Delta {
   budget: number;
   perfWeight: number;
 }
-
-const ZERO: Delta = { headcount: 0, budget: 0, perfWeight: 0 };
 
 const isZero = (delta: Delta): boolean =>
   delta.headcount === 0 && delta.budget === 0 && delta.perfWeight === 0;
@@ -90,5 +88,3 @@ export function applyPatch(
 
   return { ...model, revision, byId, aggregates };
 }
-
-export const ZERO_DELTA = ZERO;

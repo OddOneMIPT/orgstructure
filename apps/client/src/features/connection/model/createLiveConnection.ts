@@ -12,10 +12,17 @@ export interface ConnectionState {
   retryAt: number | null;
 }
 
-/** Минимальный контракт сокета — чтобы в тестах подставлять свой. */
+/**
+ * Ровно то, чем мы пользуемся у сокета. Методы объявлены сокращённой записью
+ * намеренно: при ней параметры сравниваются бивариантно, и настоящий `WebSocket`
+ * подходит под этот интерфейс сам, без приведения типов. Прежняя запись
+ * (свойство с типом функции и `event: never`) заставляла писать `as unknown as`,
+ * то есть глушила компилятор вместо описания контракта.
+ */
 export interface SocketLike {
-  addEventListener: (type: string, listener: (event: never) => void) => void;
-  close: () => void;
+  addEventListener(type: 'message', listener: (event: MessageEvent<string>) => void): void;
+  addEventListener(type: 'open' | 'close' | 'error', listener: () => void): void;
+  close(): void;
 }
 
 export interface LiveConnectionOptions {
@@ -51,7 +58,7 @@ export function createLiveConnection(options: LiveConnectionOptions) {
     url,
     onMessage,
     onStatus,
-    createSocket = (target) => new WebSocket(target) as unknown as SocketLike,
+    createSocket = (target: string): SocketLike => new WebSocket(target),
     baseMs = DEFAULT_BACKOFF.baseMs,
     capMs = DEFAULT_BACKOFF.capMs,
     random = Math.random,
