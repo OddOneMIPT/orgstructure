@@ -2,6 +2,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { useState } from 'react';
 import styled, { ThemeProvider } from 'styled-components';
 
+import { ConnectionIndicator } from '@/features/connection';
 import { SearchField } from '@/features/search';
 import { useMediaQuery } from '@/shared/lib/useMediaQuery';
 import { theme } from '@/shared/config/theme';
@@ -55,6 +56,7 @@ export function App() {
         <Layout>
           <Header>
             <Brand>Бюджетница</Brand>
+            <ConnectionIndicator />
             {isSplit ? null : <ViewSwitch />}
             <Spacer />
             <SearchField />

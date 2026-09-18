@@ -46,6 +46,17 @@ const renderTable = (view = ALL_VISIBLE) =>
     </ThemeProvider>,
   );
 
+/** Та же структура, но другие числа и ревизия — как после живого патча. */
+const patchedModel = buildModel(
+  [
+    node('div-t', null, 'Технологии', 4, 9_000_000, 90),
+    node('dep-i', 'div-t', 'Инфраструктура', 3, 7_000_000, 80),
+    node('team-c', 'dep-i', 'Облако', 42, 2_000_000, 40),
+    node('div-k', null, 'Коммерция', 8, 3_000_000, 50),
+  ],
+  { epoch: 'e1', version: 2 },
+);
+
 const names = (): string[] =>
   screen
     .getAllByRole('row')
@@ -60,7 +71,12 @@ const header = (label: string | RegExp) =>
 
 beforeEach(() => {
   tableUiStore.setState(() => ({ sort: null }));
-  dashboardStore.setState(() => ({ query: '', selectedId: null, view: 'table' }));
+  dashboardStore.setState(() => ({
+    keyboardPanel: 'table',
+    query: '',
+    selectedId: null,
+    view: 'table',
+  }));
 });
 
 describe('OrgTable', () => {
@@ -193,5 +209,124 @@ describe('OrgTable', () => {
     });
 
     expect(scrollIntoView).toHaveBeenCalledWith({ block: 'nearest' });
+  });
+
+  describe('клавиатура', () => {
+    it('в порядке табуляции ровно одна строка', () => {
+      renderTable();
+
+      const rows = screen.getAllByRole('row').slice(1);
+      expect(rows.filter((row) => row.getAttribute('tabindex') === '0')).toHaveLength(1);
+    });
+
+    it('стрелки перемещают фокус по строкам', async () => {
+      const user = userEvent.setup();
+      renderTable();
+
+      const first = screen.getByText('Коммерция').closest('tr')!;
+      first.focus();
+      await user.keyboard('{ArrowDown}');
+
+      expect(screen.getByText('Технологии').closest('tr')).toHaveFocus();
+    });
+
+    it('Home и End прыгают к краям списка', async () => {
+      const user = userEvent.setup();
+      renderTable();
+
+      screen.getByText('Коммерция').closest('tr')!.focus();
+      await user.keyboard('{End}');
+      expect(screen.getByText('Облако').closest('tr')).toHaveFocus();
+
+      await user.keyboard('{Home}');
+      expect(screen.getByText('Коммерция').closest('tr')).toHaveFocus();
+    });
+
+    it('Enter выделяет узел', async () => {
+      const user = userEvent.setup();
+      renderTable();
+
+      screen.getByText('Коммерция').closest('tr')!.focus();
+      await user.keyboard('{ArrowDown}{Enter}');
+
+      expect(dashboardStore.getState().selectedId).toBe('div-t');
+    });
+  });
+
+  it('живое обновление не прокручивает таблицу: скролл только при смене выделения', async () => {
+    const scrollIntoView = vi.fn();
+    const { rerender } = renderTable();
+
+    act(() => {
+      selectNode('team-c');
+    });
+
+    await act(async () => {
+      await new Promise((resolve) => {
+        requestAnimationFrame(() => {
+          resolve(undefined);
+        });
+      });
+    });
+
+    // Дальше следим только за прокруткой, вызванной обновлением данных.
+    for (const row of screen.getAllByRole('row')) {
+      row.scrollIntoView = scrollIntoView;
+    }
+    scrollIntoView.mockClear();
+
+    rerender(
+      <ThemeProvider theme={theme}>
+        <OrgTable model={patchedModel} view={ALL_VISIBLE} />
+      </ThemeProvider>,
+    );
+
+    await act(async () => {
+      await new Promise((resolve) => {
+        requestAnimationFrame(() => {
+          resolve(undefined);
+        });
+      });
+    });
+
+    expect(scrollIntoView).not.toHaveBeenCalled();
+  });
+
+  describe('выделение', () => {
+    it('повторный клик по выделенной строке снимает выделение', async () => {
+      const user = userEvent.setup();
+      renderTable();
+
+      await user.click(screen.getByText('Облако'));
+      expect(dashboardStore.getState().selectedId).toBe('team-c');
+
+      await user.click(screen.getByText('Облако'));
+      expect(dashboardStore.getState().selectedId).toBeNull();
+    });
+
+    it('Escape снимает выделение', async () => {
+      const user = userEvent.setup();
+      renderTable();
+
+      await user.click(screen.getByText('Облако'));
+      screen.getByText('Облако').closest('tr')!.focus();
+      await user.keyboard('{Escape}');
+
+      expect(dashboardStore.getState().selectedId).toBeNull();
+    });
+
+    it('стрелки работают без Tab, когда фокуса нет', async () => {
+      const user = userEvent.setup();
+      render(
+        <ThemeProvider theme={theme}>
+          <OrgTable model={model} view={ALL_VISIBLE} claimsArrows />
+        </ThemeProvider>,
+      );
+
+      document.body.focus();
+      await user.keyboard('{ArrowDown}');
+
+      expect(screen.getByText('Коммерция').closest('tr')).toHaveFocus();
+    });
   });
 });

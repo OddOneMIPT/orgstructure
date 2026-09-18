@@ -5,10 +5,10 @@ import styled from 'styled-components';
 import { performanceTone, splitByMatch, type OrgNodeId } from '@/entities/org';
 import { motion } from '@/shared/config/theme';
 import { describeStaff, formatBudget, formatStaff } from '@/shared/lib/format';
-import { selectNode, useIsSelected } from '@/shared/model/dashboardStore';
-import { PerformanceBar } from '@/shared/ui';
+import { toggleNode as toggleSelection, useIsSelected } from '@/shared/model/dashboardStore';
+import { FlashValue, PerformanceBar } from '@/shared/ui';
 
-import { toggleNode, useIsExpanded } from '../model/treeUiStore';
+import { expandNode, toggleNode, useIsExpanded } from '../model/treeUiStore';
 import { OrgTreeContext } from './OrgTreeContext';
 
 /** Глубже восьмого уровня отступ перестаёт расти: набор классов должен быть конечным (ADR 005). */
@@ -103,24 +103,64 @@ const Staff = styled.span`
 `;
 
 /**
+ * Анимация раскрытия: `grid-template-rows: 0fr → 1fr` — настоящий переход высоты
+ * без измерений DOM. Обёртке обязателен `min-height: 0`, иначе grid-элемент не
+ * сжимается ниже min-content и приём молча не работает; padding/margin/border
+ * у неё нулевые, чтобы в свёрнутом состоянии не оставалась полоска (ADR 005).
+ */
+const GroupWrapper = styled.div`
+  display: grid;
+  grid-template-rows: 0fr;
+
+  &[data-open='true'] {
+    grid-template-rows: 1fr;
+  }
+
+  ${motion`
+    transition: grid-template-rows ${({ theme }) => theme.timing.base} ${({ theme }) => theme.easing};
+  `}
+`;
+
+/**
  * Вложенная группа без собственного отступа: сдвигает только ячейка имени.
  * `display: contents` здесь не используется — он способен выкинуть роль из дерева доступности.
  */
 const Group = styled.ul`
+  min-height: 0;
   margin: 0;
   padding: 0;
+  overflow: hidden;
+`;
+
+/**
+ * Фокус живёт на `li` — так требует роль `treeitem`, — но его коробка включает и вложенную
+ * ветку: у раскрытого узла это десятки строк, и обводка обводила бы всё поддерево.
+ * Поэтому кольцо рисуется на самой строке, и ссылка на компонент здесь важнее селектора
+ * `> div`: тот попадал ещё и в обёртку группы.
+ */
+const Item = styled.li`
+  &:focus {
+    outline: none;
+  }
+
+  &:focus-visible > ${Row} {
+    outline: 2px solid ${({ theme }) => theme.colors.focus};
+    outline-offset: -2px;
+  }
 `;
 
 export interface TreeNodeProps {
   id: OrgNodeId;
   depth: number;
+  /** Пропсы roving tabindex: в дереве в порядке табуляции ровно один узел. */
+  rovingProps: (id: OrgNodeId) => { tabIndex: number; 'data-roving-id': string };
 }
 
 /**
  * Пропсы — примитивы, а состояние раскрытия и выделения узел читает сам через селекторы,
  * поэтому `memo` действительно работает: раскрытие одной ветки не перерисовывает всё дерево.
  */
-export const TreeNode = memo(function TreeNode({ id, depth }: TreeNodeProps) {
+export const TreeNode = memo(function TreeNode({ id, depth, rovingProps }: TreeNodeProps) {
   const { model, view, query } = useContext(OrgTreeContext);
   const storeExpanded = useIsExpanded(id);
   const isSelected = useIsSelected(id);
@@ -143,24 +183,37 @@ export const TreeNode = memo(function TreeNode({ id, depth }: TreeNodeProps) {
   const isExpanded = view.isActive ? hasChildren : storeExpanded;
 
   return (
-    <li
+    <Item
       role="treeitem"
       aria-level={depth + 1}
       aria-selected={isSelected}
       data-node-id={id}
+      {...rovingProps(id)}
       {...(hasChildren ? { 'aria-expanded': isExpanded } : {})}
     >
       <Row
         data-branch={hasChildren && !view.isActive}
         data-selected={isSelected}
+        /**
+         * Клик по строке выделяет узел и раскрывает ветку, но никогда не сворачивает:
+         * иначе повторный клик по выделенной ветке прятал бы данные, которые
+         * пользователь только что открыл. Сворачивают шеврон и стрелка влево.
+         */
         onClick={() => {
-          selectNode(id);
-          if (hasChildren && !view.isActive) toggleNode(id);
+          // Повторный клик по выделенной строке снимает выделение.
+          toggleSelection(id);
+          if (hasChildren && !view.isActive) expandNode(id);
         }}
       >
         <NameCell $depth={Math.min(depth, MAX_INDENT_DEPTH)}>
           {hasChildren && !view.isActive ? (
             <Toggle
+              /**
+               * Вне порядка табуляции: иначе Tab шёл бы через шеврон каждого видимого
+               * узла — девятнадцать нажатий, прежде чем добраться до самого дерева.
+               * С клавиатуры ветки раскрываются стрелками ←/→, как и положено дереву.
+               */
+              tabIndex={-1}
               aria-expanded={isExpanded}
               aria-label={`${isExpanded ? 'Свернуть' : 'Развернуть'} ${node.name}`}
               onClick={(event) => {
@@ -185,26 +238,38 @@ export const TreeNode = memo(function TreeNode({ id, depth }: TreeNodeProps) {
           </Name>
         </NameCell>
 
-        <PerformanceBar
-          value={node.performance}
-          tone={performanceTone(node.performance)}
-          title={`Бюджет подразделения: ${formatBudget(node.budget)}\nОбновлено: ${new Date(
-            node.updatedAt,
-          ).toLocaleString('ru-RU')}`}
-        />
+        <FlashValue value={node.performance}>
+          <PerformanceBar
+            value={node.performance}
+            tone={performanceTone(node.performance)}
+            title={`Бюджет подразделения: ${formatBudget(node.budget)}\nОбновлено: ${new Date(
+              node.updatedAt,
+            ).toLocaleString('ru-RU')}`}
+          />
+        </FlashValue>
 
         <Staff title={describeStaff(node.headcount, aggregate.headcount)}>
-          {formatStaff(node.headcount, aggregate.headcount)}
+          <FlashValue value={aggregate.headcount}>
+            {formatStaff(node.headcount, aggregate.headcount)}
+          </FlashValue>
         </Staff>
       </Row>
 
-      {hasChildren && isExpanded ? (
-        <Group role="group">
-          {children.map((childId) => (
-            <TreeNode key={childId} id={childId} depth={depth + 1} />
-          ))}
-        </Group>
+      {hasChildren ? (
+        /**
+         * Свёрнутая ветка остаётся в разметке ради анимации, поэтому её содержимое
+         * помечается `inert` — синхронно из состояния, а не по `transitionend`:
+         * это событие не приходит ни при reduced-motion, ни во вложенной свёрнутой
+         * ветке, ни в jsdom, и скрытые узлы навсегда остались бы фокусируемыми.
+         */
+        <GroupWrapper data-open={isExpanded} aria-hidden={!isExpanded}>
+          <Group role="group" {...(isExpanded ? {} : { inert: true })}>
+            {children.map((childId) => (
+              <TreeNode key={childId} id={childId} depth={depth + 1} rovingProps={rovingProps} />
+            ))}
+          </Group>
+        </GroupWrapper>
       ) : null}
-    </li>
+    </Item>
   );
 });

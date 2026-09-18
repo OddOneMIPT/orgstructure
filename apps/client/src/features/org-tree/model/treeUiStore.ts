@@ -45,6 +45,17 @@ export function initializeExpanded(model: OrgModel): void {
   });
 }
 
+/** Раскрывает ветку, если она свёрнута. Уже раскрытую не трогает. */
+export function expandNode(id: OrgNodeId): void {
+  treeUiStore.setState((prev) => {
+    if (prev.expanded.has(id)) return prev;
+
+    const expanded = new Set(prev.expanded);
+    expanded.add(id);
+    return { ...prev, expanded };
+  });
+}
+
 export function toggleNode(id: OrgNodeId): void {
   treeUiStore.setState((prev) => {
     const expanded = new Set(prev.expanded);

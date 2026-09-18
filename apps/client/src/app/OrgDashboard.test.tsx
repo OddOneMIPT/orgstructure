@@ -54,7 +54,12 @@ function renderDashboard(): { unmount: () => void } {
 beforeEach(() => {
   fetchOrgTreeMock.mockReset();
   treeUiStore.setState(() => ({ expanded: new Set(), initializedFor: null }));
-  dashboardStore.setState(() => ({ query: '', selectedId: null, view: 'table' }));
+  dashboardStore.setState(() => ({
+    keyboardPanel: 'table',
+    query: '',
+    selectedId: null,
+    view: 'table',
+  }));
 });
 
 afterEach(() => {

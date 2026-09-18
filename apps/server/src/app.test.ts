@@ -18,7 +18,7 @@ const etagOf = (response: InjectResponse): string => {
 const nodesOf = (response: InjectResponse): OrgNode[] => response.json<OrgNode[]>();
 
 const start = async (envSource: NodeJS.ProcessEnv = {}): Promise<FastifyInstance> => {
-  app = await buildServer({ env: parseEnv(envSource), logger: false });
+  app = await buildServer({ env: parseEnv(envSource), logger: false, ticker: null });
   return app;
 };
 
@@ -100,8 +100,8 @@ describe('GET /api/org-tree', () => {
   });
 
   it('две эпохи разных запусков отличаются — иначе рестарт был бы незаметен', async () => {
-    const first = await buildServer({ env: parseEnv({}), logger: false });
-    const second = await buildServer({ env: parseEnv({}), logger: false });
+    const first = await buildServer({ env: parseEnv({}), logger: false, ticker: null });
+    const second = await buildServer({ env: parseEnv({}), logger: false, ticker: null });
 
     const a = parseRevision(etagOf(await first.inject({ url: '/api/org-tree' })));
     const b = parseRevision(etagOf(await second.inject({ url: '/api/org-tree' })));
@@ -157,7 +157,12 @@ describe('отладочные параметры', () => {
 
 describe('parseEnv', () => {
   it('подставляет значения по умолчанию', () => {
-    expect(parseEnv({})).toEqual({ PORT: 3000, HOST: '0.0.0.0', MOCK_DEBUG: false });
+    expect(parseEnv({})).toEqual({
+      PORT: 3000,
+      HOST: '0.0.0.0',
+      MOCK_DEBUG: false,
+      TICK_INTERVAL_MS: 3_000,
+    });
   });
 
   it('читает MOCK_DEBUG', () => {

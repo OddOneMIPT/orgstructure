@@ -5,6 +5,7 @@ export {
   sameAggregate,
   type Aggregate,
 } from './aggregate';
+export { applyPatch } from './applyPatch';
 export { EMPTY_MODEL, ancestorsOf, buildModel } from './buildModel';
 export { IntegrityError, type IntegrityReason } from './errors';
 export {

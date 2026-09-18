@@ -10,6 +10,8 @@ const EnvSchema = z.object({
   HOST: z.string().min(1).default('0.0.0.0'),
   /** Включает отладочные параметры запроса (?delay, ?fail, ?empty, ?invalid). */
   MOCK_DEBUG: booleanish,
+  /** Период имитации живых данных; 0 выключает тикер. */
+  TICK_INTERVAL_MS: z.coerce.number().int().min(0).max(600_000).default(3_000),
 });
 
 export type Env = z.infer<typeof EnvSchema>;

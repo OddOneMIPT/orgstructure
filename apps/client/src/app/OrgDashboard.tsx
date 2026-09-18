@@ -14,7 +14,7 @@ import { OrgTree } from '@/features/org-tree';
 import { HttpError, NetworkError, ValidationError } from '@/shared/api';
 import { useDebouncedValue } from '@/shared/lib/useDebouncedValue';
 import { useMediaQuery } from '@/shared/lib/useMediaQuery';
-import { usePanelView, useQuery } from '@/shared/model/dashboardStore';
+import { useKeyboardPanel, usePanelView, useQuery } from '@/shared/model/dashboardStore';
 import { theme } from '@/shared/config/theme';
 import { Button, Panel, Skeleton, Spinner, StateMessage } from '@/shared/ui';
 
@@ -115,6 +115,7 @@ export function OrgDashboard() {
   const { data: model, error, failureReason, isFetching, refetch } = useOrgModel();
   const query = useQuery();
   const panelView = usePanelView();
+  const keyboardPanel = useKeyboardPanel();
   const isSplit = useMediaQuery(`(min-width: ${theme.layout.split})`);
 
   // Фильтруем по отложенному значению, а поле ввода живёт мгновенным.
@@ -143,6 +144,12 @@ export function OrgDashboard() {
   if (model && lastError) setLastError(null);
 
   const shownError = currentError ?? lastError;
+
+  /**
+   * Стрелки без Tab достаются одной панели: в узком режиме — видимой,
+   * в split-view — той, с которой пользователь взаимодействовал последней.
+   */
+  const arrowsOwner = isSplit ? keyboardPanel : panelView;
 
   const retry = () => {
     void refetch();
@@ -211,12 +218,20 @@ export function OrgDashboard() {
       <Panels>
         {isSplit || panelView === 'table' ? (
           <Slot>
-            <OrgTable model={model} view={view ?? ALL_VISIBLE} />
+            <OrgTable
+              model={model}
+              view={view ?? ALL_VISIBLE}
+              claimsArrows={arrowsOwner === 'table'}
+            />
           </Slot>
         ) : null}
         {isSplit || panelView === 'tree' ? (
           <Slot>
-            <OrgTree model={model} view={view ?? ALL_VISIBLE} />
+            <OrgTree
+              model={model}
+              view={view ?? ALL_VISIBLE}
+              claimsArrows={arrowsOwner === 'tree'}
+            />
           </Slot>
         ) : null}
       </Panels>

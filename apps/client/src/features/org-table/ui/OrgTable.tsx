@@ -3,9 +3,22 @@ import { useEffect, useMemo, useRef } from 'react';
 import styled from 'styled-components';
 
 import { performanceTone, splitByMatch, type FilteredView, type OrgModel } from '@/entities/org';
-import { describeStaff, formatBudget, formatCount, levelLabel } from '@/shared/lib/format';
-import { selectNode, useQuery, useSelectedId } from '@/shared/model/dashboardStore';
-import { Button, Panel, PerformanceBar, StateMessage } from '@/shared/ui';
+import {
+  describeStaff,
+  formatBudget,
+  formatCount,
+  formatPercent,
+  levelLabel,
+} from '@/shared/lib/format';
+import { useRovingFocus } from '@/shared/lib/useRovingFocus';
+import {
+  claimKeyboard,
+  selectNode,
+  toggleNode,
+  useQuery,
+  useSelectedId,
+} from '@/shared/model/dashboardStore';
+import { Button, FlashValue, Panel, PerformanceBar, StateMessage } from '@/shared/ui';
 
 import { selectRows } from '../model/selectRows';
 import { resetSort, useSort } from '../model/tableUiStore';
@@ -56,6 +69,7 @@ const Table = styled.table`
 
 const Row = styled.tr`
   cursor: pointer;
+  outline-offset: -2px;
   /* Чтобы прокрутка не прятала строку под липкой шапкой. */
   scroll-margin-block-start: 34px;
 
@@ -101,9 +115,11 @@ const PerformanceCell = styled.td`
 export interface OrgTableProps {
   model: OrgModel;
   view: FilteredView;
+  /** Этой панели достаются стрелки, когда фокуса нет ни на чём. */
+  claimsArrows?: boolean;
 }
 
-export function OrgTable({ model, view }: OrgTableProps) {
+export function OrgTable({ model, view, claimsArrows = false }: OrgTableProps) {
   const sort = useSort();
   const query = useQuery();
   const selectedId = useSelectedId();
@@ -113,11 +129,25 @@ export function OrgTable({ model, view }: OrgTableProps) {
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Выделение приходит и из дерева: показываем строку, не трогая скролл, если она уже видна.
+  const roving = useRovingFocus({
+    ids: useMemo(() => rows.map((row) => row.id), [rows]),
+    containerRef: scrollRef,
+    onActivate: toggleNode,
+    onEscape: () => {
+      selectNode(null);
+    },
+    claimArrows: claimsArrows,
+  });
+
+  /**
+   * Показываем строку, когда меняется **выделение**, и только тогда.
+   * Зависеть от строк нельзя: они пересобираются на каждом живом обновлении, и таблицу
+   * дёргало бы к выделенной строке при каждом патче.
+   */
   useEffect(() => {
     if (selectedId === null) return undefined;
 
-    // Следующим кадром: после смены сортировки или фильтра строка ещё не на своём месте.
+    // Следующим кадром: сразу после раскрытия ветки строка ещё не встала на место.
     const frame = requestAnimationFrame(() => {
       scrollRef.current
         ?.querySelector(`[data-node-id="${CSS.escape(selectedId)}"]`)
@@ -127,10 +157,15 @@ export function OrgTable({ model, view }: OrgTableProps) {
     return () => {
       cancelAnimationFrame(frame);
     };
-  }, [selectedId, rows]);
+  }, [selectedId]);
 
   return (
-    <TablePanel aria-label="Аналитическая таблица">
+    <TablePanel
+      aria-label="Аналитическая таблица"
+      onPointerDown={() => {
+        claimKeyboard('table');
+      }}
+    >
       <Header>
         <Title>Подразделения</Title>
         {sort ? (
@@ -169,14 +204,17 @@ export function OrgTable({ model, view }: OrgTableProps) {
                 <TableHeaderCell column="performance" label="Ср. эффективность" sort={sort} />
               </tr>
             </thead>
-            <tbody>
+            <tbody onKeyDown={roving.onKeyDown}>
               {rows.map((row) => (
                 <Row
                   key={row.id}
                   data-node-id={row.id}
                   aria-selected={row.id === selectedId}
+                  {...roving.itemProps(row.id)}
                   onClick={() => {
-                    selectNode(row.id);
+                    roving.setActiveId(row.id);
+                    // Повторный клик по выделенной строке снимает выделение.
+                    toggleNode(row.id);
                   }}
                 >
                   <NameCell $depth={sort ? 0 : Math.min(row.depth, MAX_INDENT_DEPTH)}>
@@ -195,14 +233,24 @@ export function OrgTable({ model, view }: OrgTableProps) {
                     data-align="right"
                     title={describeStaff(row.ownHeadcount, row.aggregate.headcount)}
                   >
-                    {formatCount(row.aggregate.headcount)}
+                    <FlashValue value={row.aggregate.headcount}>
+                      {formatCount(row.aggregate.headcount)}
+                    </FlashValue>
                   </td>
-                  <td data-align="right">{formatBudget(row.aggregate.budget)}</td>
+                  <td data-align="right">
+                    <FlashValue value={row.aggregate.budget}>
+                      {formatBudget(row.aggregate.budget)}
+                    </FlashValue>
+                  </td>
                   <PerformanceCell>
-                    <PerformanceBar
-                      value={row.aggregate.avgPerformance}
-                      tone={performanceTone(row.aggregate.avgPerformance ?? 0)}
-                    />
+                    {/* Подсветка по отрисованному числу: агрегат предка получает новый
+                        объект даже когда его значение не изменилось. */}
+                    <FlashValue value={formatPercent(row.aggregate.avgPerformance)}>
+                      <PerformanceBar
+                        value={row.aggregate.avgPerformance}
+                        tone={performanceTone(row.aggregate.avgPerformance ?? 0)}
+                      />
+                    </FlashValue>
                   </PerformanceCell>
                 </Row>
               ))}
