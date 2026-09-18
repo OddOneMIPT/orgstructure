@@ -2,10 +2,14 @@ import type { OrgNode } from '@org/contracts';
 import { QueryClient } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { renderHook, waitFor } from '@testing-library/react';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { createElement, type ReactNode } from 'react';
+
 import { fetchOrgTree, type OrgTreeFetchResult } from '@/shared/api';
 
 import { buildModel } from './buildModel';
-import { ORG_TREE_KEY, loadOrgModel } from './useOrgModel';
+import { ORG_TREE_KEY, loadOrgModel, useOrgModel } from './useOrgModel';
 
 vi.mock('@/shared/api', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/shared/api')>();
@@ -117,5 +121,49 @@ describe('loadOrgModel', () => {
     fetchOrgTreeMock.mockRejectedValue(new Error('сеть'));
 
     await expect(loadOrgModel(queryClient, undefined)).rejects.toThrow('сеть');
+  });
+});
+
+describe('useOrgModel', () => {
+  const wrapper = ({ children }: { children: ReactNode }) =>
+    createElement(QueryClientProvider, { client: queryClient }, children);
+
+  it('не повторяет запрос при новом монтировании в пределах stale time', async () => {
+    fetchOrgTreeMock.mockResolvedValue(ok(1));
+
+    const first = renderHook(() => useOrgModel(), { wrapper });
+    await waitFor(() => {
+      expect(first.result.current.data).toBeDefined();
+    });
+    first.unmount();
+
+    const second = renderHook(() => useOrgModel(), { wrapper });
+    await waitFor(() => {
+      expect(second.result.current.data).toBeDefined();
+    });
+
+    expect(fetchOrgTreeMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('после истечения stale time ревалидирует, но при той же ревизии отдаёт прежнюю модель', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    fetchOrgTreeMock.mockResolvedValue(ok(1));
+
+    const first = renderHook(() => useOrgModel(), { wrapper });
+    await waitFor(() => {
+      expect(first.result.current.data).toBeDefined();
+    });
+    const model = first.result.current.data;
+    first.unmount();
+
+    vi.advanceTimersByTime(6_000);
+
+    const second = renderHook(() => useOrgModel(), { wrapper });
+    await waitFor(() => {
+      expect(fetchOrgTreeMock).toHaveBeenCalledTimes(2);
+    });
+
+    expect(second.result.current.data).toBe(model);
+    vi.useRealTimers();
   });
 });
