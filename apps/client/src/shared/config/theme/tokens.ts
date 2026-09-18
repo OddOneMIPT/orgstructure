@@ -1,4 +1,4 @@
-import { css, type CSSProp } from 'styled-components';
+import { css } from 'styled-components';
 
 /**
  * Никакой дизайн-системы — только токены (ADR 005). Литералов цветов, отступов
@@ -83,17 +83,19 @@ export type AppTheme = typeof theme;
 
 /**
  * Любая анимация проходит через этот хелпер: по умолчанию её нет.
- * Второе условие — ручное отключение на время массовых операций вроде
+ * Второе правило — ручное отключение на время массовых операций вроде
  * «Развернуть все», где десятки одновременных переходов дают джанк (ADR 005).
+ *
+ * Используется как тегированный шаблон: motion`transition: ...;`
  */
-export const motion = (styles: CSSProp) => css`
+export const motion = (...args: Parameters<typeof css>) => css`
   @media (prefers-reduced-motion: no-preference) {
+    ${css(...args)}
+
     [data-animate='off'] & {
       transition: none;
       animation: none;
     }
-
-    ${styles}
   }
 `;
 

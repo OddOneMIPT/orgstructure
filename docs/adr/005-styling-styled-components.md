@@ -11,7 +11,9 @@
 
 ## Решение
 
-- **styled-components** + `ThemeProvider`. Тема — типизированный объект токенов (`app/theme`): палитра,
+- **styled-components** + `ThemeProvider`. Тема — типизированный объект токенов (`shared/config/theme`;
+  лежит в `shared`, а не в `app`, потому что токены нужны всем слоям, а `shared` не имеет права
+  импортировать `app`): палитра,
   семантические цвета (`perf.low/mid/high`, `status.ok/warn/error`, `flash`), шкала отступов, радиусы,
   типографика, тайминги, брейкпоинты (`split: 1280px`). `DefaultTheme` расширяется через declaration merging.
   Никакой «дизайн-системы»: только токены и несколько примитивов в `shared/ui` (Button, PerformanceBar,

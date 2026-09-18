@@ -32,10 +32,10 @@
 
 ```
 apps/client/src
-  app/        # провайдеры, layout, шапка, глобальные стили, тема
+  app/        # провайдеры, layout, шапка, глобальные стили
   features/   # org-tree, org-table, search, connection — UI + хуки фичи
   entities/   # org: модель, агрегация, патчи — чистый TS без React
-  shared/     # api, ui (кнопка, тултип, состояния), lib (debounce, backoff, format), config
+  shared/     # api, ui (кнопка, тултип, состояния), lib (стор, debounce, backoff, format), config (тема)
 apps/server/src          # http, ws, store (in-memory), seed, ticker, ai-search
 packages/contracts/src   # OrgNode, WS-сообщения, SearchFilter
 docs/                    # architecture.md, data-model.md, adr/, plan.md, ai-log.md, screenshots/
@@ -90,7 +90,8 @@ docs/                    # architecture.md, data-model.md, adr/, plan.md, ai-log
   не требует `eslint-plugin-react`). Динамика — через transient-пропсы (`$tone`) с конечным набором значений
   или через `data-*`/`aria-*` селекторы. Единственное исключение для непрерывного значения — `$pct`
   (целое 0–100) у `PerformanceBar`, см. ADR 005.
-- Цвета, отступы, радиусы, тайминги — только из темы (`app/theme`), без литералов в компонентах.
+- Цвета, отступы, радиусы, тайминги — только из темы (`shared/config/theme`; она в `shared`, потому что
+  токены нужны всем слоям, а `shared` не имеет права импортировать `app`), без литералов в компонентах.
 - Анимации — CSS (transition/keyframes); высота дерева — `grid-template-rows: 0fr ↔ 1fr`.
   Любая анимация гасится под `prefers-reduced-motion: reduce`.
 - UI-состояние (expanded, selected, view, sort, filter) — в крошечном ui-store на

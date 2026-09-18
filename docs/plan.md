@@ -85,7 +85,7 @@ int ≥ 0, `budget` int ≥ 0, `performance` 0–100, `updatedAt` ISO) — **`.s
 Тесты на моках `fetch`: ok, 500, невалидный JSON/схема, abort, 304, слабый ETag, отсутствие ETag,
 ответ со старой версией.
 
-**1.6 Тема и примитивы.** `app/theme` (токены, `motion`-хелпер, типизация `DefaultTheme`), `GlobalStyle`,
+**1.6 Тема и примитивы.** `shared/config/theme` (токены, `motion`-хелпер, типизация `DefaultTheme`), `GlobalStyle`,
 layout «шапка + панель», `shared/ui`: `Button`, `PerformanceBar`, `Spinner`, `Skeleton`, `StateMessage`,
 `VisuallyHidden`. `PerformanceBar` — дорожка с заливкой (`$pct`, `transform: scaleX`) + число,
 `role="meter"`; один компонент на дерево и таблицу.
