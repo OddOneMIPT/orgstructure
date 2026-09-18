@@ -26,10 +26,16 @@ beforeEach(() => {
 });
 
 describe('initializeExpanded', () => {
-  it('раскрывает уровни 0 и 1 — третий уровень виден сразу', () => {
+  it('раскрывает только корни — видно два уровня, дивизионы и отделы', () => {
     initializeExpanded(model);
 
-    expect([...treeUiStore.getState().expanded].sort()).toEqual(['dep', 'div']);
+    expect([...treeUiStore.getState().expanded]).toEqual(['div']);
+  });
+
+  it('не раскрывает отделы: команды пользователь открывает сам', () => {
+    initializeExpanded(model);
+
+    expect(treeUiStore.getState().expanded.has('dep')).toBe(false);
   });
 
   it('не раскрывает узлы без детей', () => {

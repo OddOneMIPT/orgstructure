@@ -17,12 +17,12 @@ export const treeUiStore = createStore<TreeUiState>({
 const revisionKey = (model: OrgModel): string =>
   model.revision ? `${model.revision.epoch}.${model.revision.version}` : 'unknown';
 
-/** Узлы с детьми на глубинах 0 и 1. */
+/** Корневые узлы, у которых есть дети. */
 function defaultExpanded(model: OrgModel): Set<OrgNodeId> {
   const expanded = new Set<OrgNodeId>();
 
   for (const [id, depth] of model.depthOf) {
-    if (depth <= 1 && (model.childrenOf.get(id)?.length ?? 0) > 0) {
+    if (depth === 0 && (model.childrenOf.get(id)?.length ?? 0) > 0) {
       expanded.add(id);
     }
   }
@@ -31,9 +31,12 @@ function defaultExpanded(model: OrgModel): Set<OrgNodeId> {
 }
 
 /**
- * «Второй уровень открыт по умолчанию» читаем буквально: раскрыты и дивизионы, и отделы,
- * поэтому команды видно сразу. Делается один раз на первую загрузку — дальше состояние
- * принадлежит пользователю и переживает ревалидации.
+ * «Второй уровень открыт по умолчанию»: раскрыты корни, поэтому видно два уровня —
+ * дивизионы и отделы. Команды пользователь раскрывает сам, иначе дерево открывается
+ * целиком и теряет смысл сворачивания.
+ *
+ * Делается один раз на первую загрузку: дальше состояние принадлежит пользователю
+ * и переживает ревалидации.
  */
 export function initializeExpanded(model: OrgModel): void {
   treeUiStore.setState((prev) => {

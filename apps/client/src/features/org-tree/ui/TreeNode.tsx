@@ -23,6 +23,11 @@ const Row = styled.div`
   &:hover {
     background: ${({ theme }) => theme.colors.surfaceMuted};
   }
+
+  /* Ветку раскрывает клик по всей строке — в шеврон целиться не нужно. */
+  &[data-branch='true'] {
+    cursor: pointer;
+  }
 `;
 
 /**
@@ -118,13 +123,24 @@ export const TreeNode = memo(function TreeNode({ id, depth }: TreeNodeProps) {
       aria-level={depth + 1}
       {...(hasChildren ? { 'aria-expanded': isExpanded } : {})}
     >
-      <Row>
+      <Row
+        data-branch={hasChildren}
+        onClick={
+          hasChildren
+            ? () => {
+                toggleNode(id);
+              }
+            : undefined
+        }
+      >
         <NameCell $depth={Math.min(depth, MAX_INDENT_DEPTH)}>
           {hasChildren ? (
             <Toggle
               aria-expanded={isExpanded}
               aria-label={`${isExpanded ? 'Свернуть' : 'Развернуть'} ${node.name}`}
-              onClick={() => {
+              onClick={(event) => {
+                // Клик по строке уже переключает ветку — иначе она схлопнулась бы дважды.
+                event.stopPropagation();
                 toggleNode(id);
               }}
             >
