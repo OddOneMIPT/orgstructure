@@ -6,7 +6,7 @@ import { performanceTone, splitByMatch, type OrgNodeId } from '@/entities/org';
 import { motion } from '@/shared/config/theme';
 import { describeStaff, formatBudget, formatStaff } from '@/shared/lib/format';
 import { selectNode, useIsSelected } from '@/shared/model/dashboardStore';
-import { PerformanceBar } from '@/shared/ui';
+import { FlashValue, PerformanceBar } from '@/shared/ui';
 
 import { toggleNode, useIsExpanded } from '../model/treeUiStore';
 import { OrgTreeContext } from './OrgTreeContext';
@@ -185,16 +185,20 @@ export const TreeNode = memo(function TreeNode({ id, depth }: TreeNodeProps) {
           </Name>
         </NameCell>
 
-        <PerformanceBar
-          value={node.performance}
-          tone={performanceTone(node.performance)}
-          title={`Бюджет подразделения: ${formatBudget(node.budget)}\nОбновлено: ${new Date(
-            node.updatedAt,
-          ).toLocaleString('ru-RU')}`}
-        />
+        <FlashValue value={node.performance}>
+          <PerformanceBar
+            value={node.performance}
+            tone={performanceTone(node.performance)}
+            title={`Бюджет подразделения: ${formatBudget(node.budget)}\nОбновлено: ${new Date(
+              node.updatedAt,
+            ).toLocaleString('ru-RU')}`}
+          />
+        </FlashValue>
 
         <Staff title={describeStaff(node.headcount, aggregate.headcount)}>
-          {formatStaff(node.headcount, aggregate.headcount)}
+          <FlashValue value={aggregate.headcount}>
+            {formatStaff(node.headcount, aggregate.headcount)}
+          </FlashValue>
         </Staff>
       </Row>
 

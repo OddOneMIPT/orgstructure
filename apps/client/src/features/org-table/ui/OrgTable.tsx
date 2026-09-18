@@ -3,9 +3,15 @@ import { useEffect, useMemo, useRef } from 'react';
 import styled from 'styled-components';
 
 import { performanceTone, splitByMatch, type FilteredView, type OrgModel } from '@/entities/org';
-import { describeStaff, formatBudget, formatCount, levelLabel } from '@/shared/lib/format';
+import {
+  describeStaff,
+  formatBudget,
+  formatCount,
+  formatPercent,
+  levelLabel,
+} from '@/shared/lib/format';
 import { selectNode, useQuery, useSelectedId } from '@/shared/model/dashboardStore';
-import { Button, Panel, PerformanceBar, StateMessage } from '@/shared/ui';
+import { Button, FlashValue, Panel, PerformanceBar, StateMessage } from '@/shared/ui';
 
 import { selectRows } from '../model/selectRows';
 import { resetSort, useSort } from '../model/tableUiStore';
@@ -195,14 +201,24 @@ export function OrgTable({ model, view }: OrgTableProps) {
                     data-align="right"
                     title={describeStaff(row.ownHeadcount, row.aggregate.headcount)}
                   >
-                    {formatCount(row.aggregate.headcount)}
+                    <FlashValue value={row.aggregate.headcount}>
+                      {formatCount(row.aggregate.headcount)}
+                    </FlashValue>
                   </td>
-                  <td data-align="right">{formatBudget(row.aggregate.budget)}</td>
+                  <td data-align="right">
+                    <FlashValue value={row.aggregate.budget}>
+                      {formatBudget(row.aggregate.budget)}
+                    </FlashValue>
+                  </td>
                   <PerformanceCell>
-                    <PerformanceBar
-                      value={row.aggregate.avgPerformance}
-                      tone={performanceTone(row.aggregate.avgPerformance ?? 0)}
-                    />
+                    {/* Подсветка по отрисованному числу: агрегат предка получает новый
+                        объект даже когда его значение не изменилось. */}
+                    <FlashValue value={formatPercent(row.aggregate.avgPerformance)}>
+                      <PerformanceBar
+                        value={row.aggregate.avgPerformance}
+                        tone={performanceTone(row.aggregate.avgPerformance ?? 0)}
+                      />
+                    </FlashValue>
                   </PerformanceCell>
                 </Row>
               ))}

@@ -1,4 +1,6 @@
 export { Button } from './Button';
+export { Flash } from './Flash';
+export { FlashValue, type FlashValueProps } from './FlashValue';
 export { Panel } from './Panel';
 export { PerformanceBar, type PerformanceBarProps, type PerformanceTone } from './PerformanceBar';
 export { Skeleton } from './Skeleton';
