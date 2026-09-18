@@ -15,6 +15,7 @@
 
 ```ts
 type OrgModel = {
+  epoch: string            // id запуска сервера; версии сравнимы только внутри эпохи (ADR 004)
   version: number
   byId: ReadonlyMap<Id, OrgNode>
   childrenOf: ReadonlyMap<Id | null, readonly Id[]>   // null → корни (дивизионы)

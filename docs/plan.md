@@ -43,17 +43,17 @@ gzip-сумма JS+CSS, порог 200 КБ.
 int ≥ 0, `budget` int ≥ 0, `performance` 0–100, `updatedAt` ISO), `OrgTreeResponseSchema`. Тесты на схему
 (валидный, лишние поля, performance вне диапазона, не массив).
 
-**1.3 Сервер.** Fastify: `GET /api/org-tree` → плоский массив, `ETag: "v<version>"`, `Cache-Control: no-cache`,
+**1.3 Сервер.** Fastify: `GET /api/org-tree` → плоский массив, `ETag: "<epoch>.<version>"` (`epoch` — uuid запуска процесса), `Cache-Control: no-cache`,
 ответ `304` по `If-None-Match`; `GET /api/health`. `seed.ts` — детерминированный генератор: 4 дивизиона →
 3–4 отдела → 2–4 команды (≥ 40 узлов, 3 уровня; осмысленные русские названия). `OrgStore`: приватный массив,
-`snapshot(): { nodes, version }` отдаёт копию. Конфиг env через zod с человекочитаемой ошибкой (`PORT`, `MOCK_DEBUG`).
+`snapshot(): { nodes, epoch, version }` отдаёт копию. Конфиг env через zod с человекочитаемой ошибкой (`PORT`, `MOCK_DEBUG`).
 Отладочные параметры только при `MOCK_DEBUG=1`: `?delay=ms`, `?fail=1`, `?empty=1`, `?invalid=1` — для демонстрации
 состояний и скриншотов. Сервер валидирует собственный ответ той же схемой в тестах.
 
-**1.4 Модель дерева (`entities/org`).** `buildModel(nodes, version, prev?)` → `byId`, `childrenOf`, `depthOf`
+**1.4 Модель дерева (`entities/org`).** `buildModel(nodes, revision, prev?)` (`revision = { epoch, version }`) → `byId`, `childrenOf`, `depthOf`
 (агрегаты добавятся на шаге 2, место в типе закладываем сразу). Проверка целостности: дубликат `id`, сирота, цикл →
 `IntegrityError`. Дети сортируются по имени (`Intl.Collator('ru')`). Тесты: построение, три вида нарушений,
-переиспользование объектов из `prev`, одинаковая версия → та же ссылка.
+переиспользование объектов из `prev`, одинаковая ревизия → та же ссылка, та же версия при другой эпохе → новая модель.
 
 **1.5 Слой API и запрос.** `shared/api/fetchOrgTree({ signal })` → `HttpError | ValidationError`; `useOrgModel()` —
 `useQuery` c `staleTime: 5_000`, `structuralSharing: false`, `retry: 1`, версия из `ETag`. `QueryClientProvider`
@@ -163,8 +163,9 @@ Dev-эндпоинт `POST /api/debug/drop-connections` при `MOCK_DEBUG=1`. �
 **3.5 Клиент соединения.** `features/connection/createLiveConnection({ url, onMessage, onStatus })` —
 конечный автомат `connecting | open | reconnecting | offline`, heartbeat-таймаут 35 с, сброс попыток после 5 с
 стабильной работы, реакция на `online/offline`, `dispose()`. Хук `useLiveUpdates()` монтируется один раз в `app/`:
-таблица решений из ADR 004 (`hello`/`patch`/`reset`/разрыв версий). Тесты автомата на fake timers и фейковом
-WebSocket; тест «патч с версией +1 → `setQueryData`, разрыв → `invalidateQueries`, дубликат → игнор».
+таблица решений из ADR 004 (смена эпохи/`hello`/`patch`/`reset`/разрыв версий). Тесты автомата на fake timers и фейковом
+WebSocket; тест «патч с версией +1 → `setQueryData`, разрыв → `invalidateQueries`, дубликат → игнор, **рестарт сервера с совпавшим номером версии (другая эпоха) →
+`invalidateQueries`, патч не применяется**».
 
 **3.6 Индикатор соединения.** В шапке, `role="status"`: подключено / подключение (спиннер lucide) / нет связи +
 обратный отсчёт до попытки и кнопка «Подключиться сейчас».
@@ -187,6 +188,7 @@ PageUp/PageDown — бонус. Фокус переживает сортиров
 - [ ] Во вкладке Network при работающем WS нет повторных `GET /api/org-tree`; после обрыва и расхождения версий — ровно один
 - [ ] Патч меняет ссылки только у узла и его предков (тест) → ререндерятся только их строки (React Profiler)
 - [ ] Обновлённые ячейки гаснут ~1.5 с; при `prefers-reduced-motion` анимаций нет
+- [ ] Рестарт сервера (обнуление версий) не даёт тихого расхождения: новая эпоха → один рефетч, UI показывает данные нового процесса
 - [ ] Остановка сервера → индикатор «нет связи», задержки растут экспоненциально до cap; запуск → авто-восстановление
 - [ ] Таблица полностью управляется с клавиатуры: стрелки, Home/End, Enter
 - [ ] Размонтирование закрывает сокет и таймеры (тест)
@@ -243,6 +245,7 @@ healthcheck), `.env.example`, `.dockerignore`. `docker-compose up` → прил�
 | `replaceEqualDeep` react-query не спускается в `Map` → модель заменяется целиком | `structuralSharing: false`, идентичность в `buildModel`/`applyPatch` (ADR 002) |
 | `memo(TreeNode)` бесполезен, если вниз передаётся `Set` раскрытых узлов | подписка узла на своё `isOpen` через селектор стора (1.7–1.8) |
 | react-query v5: повтор запроса без данных сбрасывает статус в `pending` → мигает лоадер на экране ошибки | состояние ошибки держим сами, ориентируемся на `isFetching` (ADR 002, п. 7) |
+| Падение сервера: in-memory `version` обнуляется и может совпасть со старой → `hello`/`ETag` «сходятся», патчи режутся как дубликаты | ревизия = `{ epoch, version }`, эпоха сравнивается первой (ADR 004) |
 | Заголовок версии пишется до `?delay`, тело — после → расхождение при работающем тикере | атомарный `snapshot()` после задержки (3.2) |
 | `tsc --noEmit` в `build` сервера ничего не эмитит → Docker не стартует | esbuild-бандл с шага 4.1, `typecheck` отдельно |
 | Двойной клик порождает два `click` | идемпотентная схема asc/desc (2.5, ADR 006) |
