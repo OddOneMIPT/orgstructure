@@ -6,7 +6,7 @@ const booleanish = z
   .transform((value) => value === '1' || value === 'true');
 
 const EnvSchema = z.object({
-  PORT: z.coerce.number().int().min(1).max(65535).default(3001),
+  PORT: z.coerce.number().int().min(1).max(65535).default(3000),
   HOST: z.string().min(1).default('0.0.0.0'),
   /** Включает отладочные параметры запроса (?delay, ?fail, ?empty, ?invalid). */
   MOCK_DEBUG: booleanish,

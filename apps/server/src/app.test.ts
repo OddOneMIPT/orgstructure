@@ -157,7 +157,7 @@ describe('отладочные параметры', () => {
 
 describe('parseEnv', () => {
   it('подставляет значения по умолчанию', () => {
-    expect(parseEnv({})).toEqual({ PORT: 3001, HOST: '0.0.0.0', MOCK_DEBUG: false });
+    expect(parseEnv({})).toEqual({ PORT: 3000, HOST: '0.0.0.0', MOCK_DEBUG: false });
   });
 
   it('читает MOCK_DEBUG', () => {
