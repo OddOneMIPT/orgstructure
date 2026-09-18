@@ -1,5 +1,6 @@
-import type { NodeChange, OrgNode } from '@org/contracts';
 import { describe, expect, it } from 'vitest';
+
+import type { NodeChange, OrgNode } from '@org/contracts';
 
 import { applyPatch } from './applyPatch';
 import { buildModel } from './buildModel';

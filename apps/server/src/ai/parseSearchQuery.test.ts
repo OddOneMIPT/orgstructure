@@ -1,5 +1,6 @@
-import { EMPTY_FILTER, type SearchFilter } from '@org/contracts';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { EMPTY_FILTER, type SearchFilter } from '@org/contracts';
 
 import { parseEnv } from '../env.js';
 import { parseSearchQuery, resetSearchCache } from './parseSearchQuery.js';

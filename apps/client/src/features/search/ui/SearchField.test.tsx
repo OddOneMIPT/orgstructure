@@ -1,8 +1,9 @@
-import { EMPTY_FILTER, type SearchParseResponse } from '@org/contracts';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ThemeProvider } from 'styled-components';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { EMPTY_FILTER, type SearchParseResponse } from '@org/contracts';
 
 import { theme } from '@/shared/config/theme';
 import { dashboardStore } from '@/shared/model/dashboardStore';

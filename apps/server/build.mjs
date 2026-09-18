@@ -7,14 +7,15 @@
  */
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
-
 import { build } from 'esbuild';
 
 const here = (relative) => fileURLToPath(new URL(relative, import.meta.url));
 
 const manifest = JSON.parse(await readFile(here('./package.json'), 'utf8'));
 
-const external = Object.keys(manifest.dependencies ?? {}).filter((name) => name !== '@org/contracts');
+const external = Object.keys(manifest.dependencies ?? {}).filter(
+  (name) => name !== '@org/contracts',
+);
 
 await build({
   entryPoints: [here('./src/main.ts')],

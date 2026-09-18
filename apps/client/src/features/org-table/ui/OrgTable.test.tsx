@@ -1,13 +1,14 @@
-import type { OrgNode } from '@org/contracts';
 import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ThemeProvider } from 'styled-components';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import type { OrgNode } from '@org/contracts';
+
 import { ALL_VISIBLE, buildModel, createNamePredicate, selectFilteredView } from '@/entities/org';
 import { theme } from '@/shared/config/theme';
-import { dashboardStore, selectNode, setQuery } from '@/shared/model/dashboardStore';
 import { normalizeSpaces } from '@/shared/lib/format';
+import { dashboardStore, selectNode, setQuery } from '@/shared/model/dashboardStore';
 
 import { tableUiStore } from '../model/tableUiStore';
 import { OrgTable } from './OrgTable';

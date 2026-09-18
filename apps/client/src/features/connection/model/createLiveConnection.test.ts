@@ -1,9 +1,10 @@
-import type { ServerMessage } from '@org/contracts';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import type { ServerMessage } from '@org/contracts';
+
 import {
-  createLiveConnection,
   type ConnectionState,
+  createLiveConnection,
   type SocketLike,
 } from './createLiveConnection';
 

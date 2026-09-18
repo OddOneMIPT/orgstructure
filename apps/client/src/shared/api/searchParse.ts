@@ -1,4 +1,4 @@
-import { SearchParseResponseSchema, type SearchParseResponse } from '@org/contracts';
+import { type SearchParseResponse, SearchParseResponseSchema } from '@org/contracts';
 
 export const SEARCH_PARSE_URL = '/api/search/parse';
 

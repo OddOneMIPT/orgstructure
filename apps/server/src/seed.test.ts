@@ -1,5 +1,6 @@
-import { OrgTreeResponseSchema } from '@org/contracts';
 import { describe, expect, it } from 'vitest';
+
+import { OrgTreeResponseSchema } from '@org/contracts';
 
 import { createSeedNodes } from './seed.js';
 

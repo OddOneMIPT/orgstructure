@@ -1,5 +1,6 @@
-import { OrgNodeSchema, type OrgNode } from '@org/contracts';
 import { describe, expect, it } from 'vitest';
+
+import { type OrgNode, OrgNodeSchema } from '@org/contracts';
 
 import { OrgStore } from './store.js';
 import { createTicker } from './ticker.js';

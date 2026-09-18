@@ -41,6 +41,10 @@ packages/contracts/src   # OrgNode, WS-сообщения, SearchFilter
 docs/                    # architecture.md, data-model.md, adr/, plan.md, ai-log.md, screenshots/
 ```
 
+Порядок импортов (внешние → `@org/*` → `@/*` → относительные) чинится автоматически:
+`eslint-plugin-simple-import-sort`, `npm run lint:fix`. Раньше это была договорённость без правила — и она
+разъезжалась.
+
 Направление импортов: `app → features → entities → shared`; в обратную сторону и между фичами напрямую —
 нельзя (общение фич через `entities` и ui-store). Абсолютные импорты `@/…` внутри клиента; относительные —
 только внутри одной папки-модуля. Контракты импортируются как `@org/contracts`.
@@ -54,7 +58,8 @@ docs/                    # architecture.md, data-model.md, adr/, plan.md, ai-log
   перемоткой, push всех веток и тегов).
 - Внутри ветки — небольшие атомарные коммиты, Conventional Commits на английском
   (`feat(tree): …`, `fix(ws): …`, `docs(adr): …`, `test(org): …`, `chore: …`).
-- Перед каждым коммитом зелёные: `npm run typecheck`, `npm run lint`, `npm test`. Перед закрытием шага —
+- Перед каждым коммитом зелёный `npm run verify` (формат + типы + линтер + тесты; ровно это гоняет CI).
+  Перед закрытием шага —
   ещё `npm run build && npm run size`.
 - **`docs/ai-log.md`**: одна строка на задачу — что сгенерировано AI, что переписано руками и почему.
   Это сырьё для обязательного раздела README «AI в разработке»; вести честно и сразу, не задним числом.

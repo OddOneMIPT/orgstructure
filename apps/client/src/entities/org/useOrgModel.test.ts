@@ -1,15 +1,15 @@
-import type { OrgNode } from '@org/contracts';
 import { QueryClient } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { renderHook, waitFor } from '@testing-library/react';
+import { createElement, type ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { renderHook, waitFor } from '@testing-library/react';
-import { QueryClientProvider } from '@tanstack/react-query';
-import { createElement, type ReactNode } from 'react';
+import type { OrgNode } from '@org/contracts';
 
 import { fetchOrgTree, type OrgTreeFetchResult } from '@/shared/api';
 
 import { buildModel } from './buildModel';
-import { ORG_TREE_KEY, loadOrgModel, useOrgModel } from './useOrgModel';
+import { loadOrgModel, ORG_TREE_KEY, useOrgModel } from './useOrgModel';
 
 vi.mock('@/shared/api', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/shared/api')>();

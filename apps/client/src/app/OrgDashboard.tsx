@@ -6,22 +6,18 @@ import {
   ALL_VISIBLE,
   createFilterPredicate,
   createNamePredicate,
-  selectFilteredView,
   IntegrityError,
+  selectFilteredView,
   useOrgModel,
 } from '@/entities/org';
 import { OrgTable } from '@/features/org-table';
 import { OrgTree } from '@/features/org-tree';
+import { AiFilterChips, useAiSearch } from '@/features/search';
 import { HttpError, NetworkError, ValidationError } from '@/shared/api';
+import { theme } from '@/shared/config/theme';
 import { useDebouncedValue } from '@/shared/lib/useDebouncedValue';
 import { useMediaQuery } from '@/shared/lib/useMediaQuery';
-import { AiFilterChips, useAiSearch } from '@/features/search';
-import {
-  useKeyboardPanel,
-  usePanelView,
-  useQuery,
-} from '@/shared/model/dashboardStore';
-import { theme } from '@/shared/config/theme';
+import { useKeyboardPanel, usePanelView, useSearchQuery } from '@/shared/model/dashboardStore';
 import { Button, Panel, Skeleton, Spinner, StateMessage } from '@/shared/ui';
 
 /** Задание: дебаунс фильтра 250 мс. */
@@ -119,7 +115,7 @@ export function describeError(error: Error): { title: string; description: strin
 
 export function OrgDashboard() {
   const { data: model, error, failureReason, isFetching, refetch } = useOrgModel();
-  const query = useQuery();
+  const query = useSearchQuery();
   const panelView = usePanelView();
   const keyboardPanel = useKeyboardPanel();
   const ai = useAiSearch();

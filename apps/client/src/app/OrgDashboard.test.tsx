@@ -1,4 +1,3 @@
-import type { OrgNode } from '@org/contracts';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -6,10 +5,12 @@ import type { ReactNode } from 'react';
 import { ThemeProvider } from 'styled-components';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import type { OrgNode } from '@org/contracts';
+
 import { treeUiStore } from '@/features/org-tree';
-import { dashboardStore, setView } from '@/shared/model/dashboardStore';
-import { HttpError, fetchOrgTree, type OrgTreeFetchResult } from '@/shared/api';
+import { fetchOrgTree, HttpError, type OrgTreeFetchResult } from '@/shared/api';
 import { theme } from '@/shared/config/theme';
+import { dashboardStore, setView } from '@/shared/model/dashboardStore';
 
 import { OrgDashboard } from './OrgDashboard';
 import { createQueryClient } from './queryClient';

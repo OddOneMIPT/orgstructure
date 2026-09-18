@@ -2,10 +2,10 @@
  * Бюджет прод-сборки: ≤ 200 КБ gzip на JS + CSS (задание, шаг 04).
  * Считаем с первого шага, чтобы не узнать о превышении в последний день.
  */
-import { gzipSync } from 'node:zlib';
-import { readFile, readdir } from 'node:fs/promises';
+import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { gzipSync } from 'node:zlib';
 
 const LIMIT_BYTES = 200 * 1024;
 const assetsDir = fileURLToPath(new URL('../apps/client/dist/assets', import.meta.url));

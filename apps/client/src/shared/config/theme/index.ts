@@ -1,1 +1,1 @@
-export { focusRing, motion, theme, type AppTheme } from './tokens';
+export { type AppTheme, focusRing, motion, theme } from './tokens';

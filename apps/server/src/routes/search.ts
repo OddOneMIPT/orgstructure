@@ -1,5 +1,6 @@
-import { SearchParseRequestSchema } from '@org/contracts';
 import type { FastifyInstance } from 'fastify';
+
+import { SearchParseRequestSchema } from '@org/contracts';
 
 import { parseSearchQuery } from '../ai/parseSearchQuery.js';
 import type { Env } from '../env.js';

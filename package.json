@@ -22,13 +22,14 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "size": "node scripts/size.mjs",
-    "verify": "npm run typecheck && npm run lint && npm test"
+    "verify": "npm run format:check && npm run typecheck && npm run lint && npm test"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/node": "^22.19.0",
     "eslint": "^10.10.0",
     "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-simple-import-sort": "^14.0.0",
     "prettier": "^3.9.8",
     "typescript": "5.9.3",
     "typescript-eslint": "^8.70.0",

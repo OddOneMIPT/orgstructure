@@ -3,10 +3,10 @@ import { useEffect, useRef } from 'react';
 import styled from 'styled-components';
 
 import { parseSearchQuery } from '@/shared/api';
-import { setQuery, useQuery } from '@/shared/model/dashboardStore';
+import { setQuery, useSearchQuery } from '@/shared/model/dashboardStore';
+import { Spinner } from '@/shared/ui';
 
 import { resetAiState, setAiState, useAiSearch } from '../model/aiSearchStore';
-import { Spinner } from '@/shared/ui';
 
 const Wrapper = styled.div`
   display: flex;
@@ -69,7 +69,7 @@ const Clear = styled.button.attrs({ type: 'button' })`
  * остаётся текстовым — см. ADR 007.
  */
 export function SearchField() {
-  const query = useQuery();
+  const query = useSearchQuery();
   const ai = useAiSearch();
   const request = useRef<AbortController | null>(null);
 

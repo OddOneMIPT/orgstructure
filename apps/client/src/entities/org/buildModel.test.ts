@@ -1,5 +1,6 @@
-import type { OrgNode, Revision } from '@org/contracts';
 import { describe, expect, it } from 'vitest';
+
+import type { OrgNode, Revision } from '@org/contracts';
 
 import { ancestorsOf, buildModel } from './buildModel';
 import { IntegrityError } from './errors';

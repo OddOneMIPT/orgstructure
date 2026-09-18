@@ -1,24 +1,24 @@
 export {
+  type Aggregate,
   averageOf,
   computeAggregates,
   contributionOf,
   sameAggregate,
-  type Aggregate,
 } from './aggregate';
 export { applyPatch } from './applyPatch';
-export { EMPTY_MODEL, ancestorsOf, buildModel } from './buildModel';
+export { ancestorsOf, buildModel, EMPTY_MODEL } from './buildModel';
 export { IntegrityError, type IntegrityReason } from './errors';
-export { createFilterPredicate, describeFilter } from './searchFilter';
 export {
   ALL_VISIBLE,
   createNamePredicate,
-  isVisible,
-  selectFilteredView,
-  splitByMatch,
   type FilteredView,
+  isVisible,
   type NamePart,
   type NodePredicate,
+  selectFilteredView,
+  splitByMatch,
 } from './filter';
-export { PERFORMANCE_THRESHOLDS, performanceTone, type PerformanceTone } from './performance';
+export { PERFORMANCE_THRESHOLDS, type PerformanceTone, performanceTone } from './performance';
+export { createFilterPredicate, describeFilter } from './searchFilter';
 export type { OrgModel, OrgNode, OrgNodeId, Revision } from './types';
-export { ORG_TREE_KEY, ORG_TREE_STALE_TIME, loadOrgModel, useOrgModel } from './useOrgModel';
+export { loadOrgModel, ORG_TREE_KEY, ORG_TREE_STALE_TIME, useOrgModel } from './useOrgModel';

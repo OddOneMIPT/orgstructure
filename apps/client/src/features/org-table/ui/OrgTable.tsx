@@ -2,7 +2,7 @@ import { ListRestart, SearchX } from 'lucide-react';
 import { useEffect, useMemo, useRef } from 'react';
 import styled from 'styled-components';
 
-import { performanceTone, splitByMatch, type FilteredView, type OrgModel } from '@/entities/org';
+import { type FilteredView, type OrgModel, performanceTone, splitByMatch } from '@/entities/org';
 import {
   describeStaff,
   formatBudget,
@@ -15,7 +15,7 @@ import {
   claimKeyboard,
   selectNode,
   toggleNode,
-  useQuery,
+  useSearchQuery,
   useSelectedId,
 } from '@/shared/model/dashboardStore';
 import { Button, FlashValue, Panel, PerformanceBar, StateMessage } from '@/shared/ui';
@@ -121,7 +121,7 @@ export interface OrgTableProps {
 
 export function OrgTable({ model, view, claimsArrows = false }: OrgTableProps) {
   const sort = useSort();
-  const query = useQuery();
+  const query = useSearchQuery();
   const selectedId = useSelectedId();
 
   // Пересчёт только при смене модели, фильтра или сортировки.

@@ -1,6 +1,6 @@
 import styled from 'styled-components';
 
-import { setView, usePanelView, type PanelView } from '@/shared/model/dashboardStore';
+import { type PanelView, setView, usePanelView } from '@/shared/model/dashboardStore';
 
 const List = styled.div`
   display: inline-flex;

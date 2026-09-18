@@ -1,7 +1,7 @@
 import {
-  isVisible,
   type Aggregate,
   type FilteredView,
+  isVisible,
   type OrgModel,
   type OrgNodeId,
 } from '@/entities/org';

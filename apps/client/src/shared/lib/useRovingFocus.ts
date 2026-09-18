@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type KeyboardEvent, type RefObject } from 'react';
+import { type KeyboardEvent, type RefObject, useCallback, useEffect, useState } from 'react';
 
 export interface RovingFocusOptions {
   /** Идентификаторы в том порядке, в каком они видны на экране. */

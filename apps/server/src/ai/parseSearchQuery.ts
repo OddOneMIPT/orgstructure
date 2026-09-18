@@ -1,9 +1,10 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { zodOutputFormat } from '@anthropic-ai/sdk/helpers/zod';
+
 import {
-  SearchFilterSchema,
   isEmptyFilter,
   type SearchFilter,
+  SearchFilterSchema,
   type SearchParseResponse,
 } from '@org/contracts';
 
@@ -41,7 +42,8 @@ export interface ParseSearchQueryOptions {
 let shared: { key: string; messages: Pick<Anthropic['messages'], 'parse'> } | null = null;
 
 const sharedClient = (apiKey: string): Pick<Anthropic['messages'], 'parse'> => {
-  if (shared?.key !== apiKey) shared = { key: apiKey, messages: new Anthropic({ apiKey }).messages };
+  if (shared?.key !== apiKey)
+    shared = { key: apiKey, messages: new Anthropic({ apiKey }).messages };
   return shared.messages;
 };
 

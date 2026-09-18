@@ -1,5 +1,6 @@
-import { EMPTY_FILTER, type OrgNode, type SearchFilter } from '@org/contracts';
 import { describe, expect, it } from 'vitest';
+
+import { EMPTY_FILTER, type OrgNode, type SearchFilter } from '@org/contracts';
 
 import { buildModel } from './buildModel';
 import { selectFilteredView } from './filter';

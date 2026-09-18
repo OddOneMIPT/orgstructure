@@ -4,13 +4,13 @@ import styled, { ThemeProvider } from 'styled-components';
 
 import { ConnectionIndicator } from '@/features/connection';
 import { SearchField } from '@/features/search';
-import { useMediaQuery } from '@/shared/lib/useMediaQuery';
 import { theme } from '@/shared/config/theme';
+import { useMediaQuery } from '@/shared/lib/useMediaQuery';
 
 import { GlobalStyle } from './GlobalStyle';
 import { OrgDashboard } from './OrgDashboard';
-import { ViewSwitch } from './ViewSwitch';
 import { createQueryClient } from './queryClient';
+import { ViewSwitch } from './ViewSwitch';
 
 const Layout = styled.div`
   display: grid;

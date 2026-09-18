@@ -1,7 +1,8 @@
-import { OrgTreeResponseSchema, parseRevision, type OrgNode } from '@org/contracts';
 import type { FastifyInstance } from 'fastify';
 import type { Response as InjectResponse } from 'light-my-request';
 import { afterEach, describe, expect, it } from 'vitest';
+
+import { type OrgNode, OrgTreeResponseSchema, parseRevision } from '@org/contracts';
 
 import { buildServer } from './app.js';
 import { parseEnv } from './env.js';
