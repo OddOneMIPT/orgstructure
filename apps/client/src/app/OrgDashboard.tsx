@@ -1,11 +1,25 @@
 import { CircleAlert, FolderOpen } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import styled from 'styled-components';
 
-import { IntegrityError, useOrgModel } from '@/entities/org';
+import {
+  ALL_VISIBLE,
+  createNamePredicate,
+  selectFilteredView,
+  IntegrityError,
+  useOrgModel,
+} from '@/entities/org';
+import { OrgTable } from '@/features/org-table';
 import { OrgTree } from '@/features/org-tree';
 import { HttpError, NetworkError, ValidationError } from '@/shared/api';
+import { useDebouncedValue } from '@/shared/lib/useDebouncedValue';
+import { useMediaQuery } from '@/shared/lib/useMediaQuery';
+import { usePanelView, useQuery } from '@/shared/model/dashboardStore';
+import { theme } from '@/shared/config/theme';
 import { Button, Panel, Skeleton, Spinner, StateMessage } from '@/shared/ui';
+
+/** Задание: дебаунс фильтра 250 мс. */
+const FILTER_DEBOUNCE_MS = 250;
 
 const Content = styled.div`
   display: flex;
@@ -15,8 +29,20 @@ const Content = styled.div`
   height: 100%;
 `;
 
-const TreeSlot = styled.div`
+const Panels = styled.div`
   flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: ${({ theme }) => theme.spacing.lg};
+
+  /* Split-view: слева таблица, справа дерево (задание: ≥1280px). */
+  @media (min-width: ${({ theme }) => theme.layout.split}) {
+    grid-template-columns: minmax(0, 1fr) ${({ theme }) => theme.layout.treePanelWidth};
+  }
+`;
+
+const Slot = styled.div`
   min-height: 0;
 `;
 
@@ -87,6 +113,17 @@ export function describeError(error: Error): { title: string; description: strin
 
 export function OrgDashboard() {
   const { data: model, error, failureReason, isFetching, refetch } = useOrgModel();
+  const query = useQuery();
+  const panelView = usePanelView();
+  const isSplit = useMediaQuery(`(min-width: ${theme.layout.split})`);
+
+  // Фильтруем по отложенному значению, а поле ввода живёт мгновенным.
+  const debouncedQuery = useDebouncedValue(query, FILTER_DEBOUNCE_MS);
+
+  const view = useMemo(
+    () => (model ? selectFilteredView(model, createNamePredicate(debouncedQuery)) : null),
+    [model, debouncedQuery],
+  );
 
   /**
    * `error` выставляется только когда попытки исчерпаны. Между ними, а также пока
@@ -171,9 +208,18 @@ export function OrgDashboard() {
           Не удалось обновить данные, показаны последние загруженные.
         </BackgroundError>
       ) : null}
-      <TreeSlot>
-        <OrgTree model={model} />
-      </TreeSlot>
+      <Panels>
+        {isSplit || panelView === 'table' ? (
+          <Slot>
+            <OrgTable model={model} view={view ?? ALL_VISIBLE} />
+          </Slot>
+        ) : null}
+        {isSplit || panelView === 'tree' ? (
+          <Slot>
+            <OrgTree model={model} view={view ?? ALL_VISIBLE} />
+          </Slot>
+        ) : null}
+      </Panels>
     </Content>
   );
 }

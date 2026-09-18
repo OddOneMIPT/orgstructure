@@ -1,6 +1,7 @@
 export {
   collapseAll,
   expandAll,
+  expandAncestors,
   initializeExpanded,
   toggleNode,
   treeUiStore,
