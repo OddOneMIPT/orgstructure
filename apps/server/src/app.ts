@@ -4,6 +4,7 @@ import Fastify, { type FastifyInstance } from 'fastify';
 import { env as processEnv, type Env } from './env.js';
 import { registerLiveRoute } from './routes/live.js';
 import { registerOrgTreeRoute } from './routes/org-tree.js';
+import { registerSearchRoute } from './routes/search.js';
 import { OrgStore } from './store.js';
 import { createTicker, type Ticker } from './ticker.js';
 
@@ -24,6 +25,7 @@ export async function buildServer(options: BuildServerOptions = {}): Promise<Fas
   app.get('/api/health', () => ({ status: 'ok', nodes: store.size, ...store.revision }));
   registerOrgTreeRoute(app, { store, env });
   registerLiveRoute(app, { store });
+  registerSearchRoute(app, { env });
 
   if (env.MOCK_DEBUG) {
     // Демонстрация обрыва соединения и экспоненциального backoff на клиенте.

@@ -4,6 +4,7 @@ import styled from 'styled-components';
 
 import {
   ALL_VISIBLE,
+  createFilterPredicate,
   createNamePredicate,
   selectFilteredView,
   IntegrityError,
@@ -14,7 +15,13 @@ import { OrgTree } from '@/features/org-tree';
 import { HttpError, NetworkError, ValidationError } from '@/shared/api';
 import { useDebouncedValue } from '@/shared/lib/useDebouncedValue';
 import { useMediaQuery } from '@/shared/lib/useMediaQuery';
-import { useKeyboardPanel, usePanelView, useQuery } from '@/shared/model/dashboardStore';
+import { AiFilterChips } from '@/features/search';
+import {
+  useAiSearch,
+  useKeyboardPanel,
+  usePanelView,
+  useQuery,
+} from '@/shared/model/dashboardStore';
 import { theme } from '@/shared/config/theme';
 import { Button, Panel, Skeleton, Spinner, StateMessage } from '@/shared/ui';
 
@@ -116,15 +123,26 @@ export function OrgDashboard() {
   const query = useQuery();
   const panelView = usePanelView();
   const keyboardPanel = useKeyboardPanel();
+  const ai = useAiSearch();
   const isSplit = useMediaQuery(`(min-width: ${theme.layout.split})`);
 
   // Фильтруем по отложенному значению, а поле ввода живёт мгновенным.
   const debouncedQuery = useDebouncedValue(query, FILTER_DEBOUNCE_MS);
 
-  const view = useMemo(
-    () => (model ? selectFilteredView(model, createNamePredicate(debouncedQuery)) : null),
-    [model, debouncedQuery],
-  );
+  /**
+   * Разобранный AI-фильтр подставляется в тот же предикат, что и текстовый поиск,
+   * поэтому фильтрует оба представления одинаково (ADR 007).
+   */
+  const view = useMemo(() => {
+    if (!model) return null;
+
+    const predicate =
+      ai.status === 'applied'
+        ? createFilterPredicate(ai.filter)
+        : createNamePredicate(debouncedQuery);
+
+    return selectFilteredView(model, predicate);
+  }, [model, ai, debouncedQuery]);
 
   /**
    * `error` выставляется только когда попытки исчерпаны. Между ними, а также пока
@@ -209,6 +227,7 @@ export function OrgDashboard() {
 
   return (
     <Content>
+      <AiFilterChips />
       {currentError ? (
         <BackgroundError role="status">
           <CircleAlert size={14} aria-hidden />

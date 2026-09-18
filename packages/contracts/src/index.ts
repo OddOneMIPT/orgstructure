@@ -22,3 +22,16 @@ export {
   type ServerMessage,
 } from './messages.js';
 export { formatRevision, isSameRevision, parseRevision, type Revision } from './revision.js';
+export {
+  EMPTY_FILTER,
+  OrgLevelSchema,
+  SearchFilterSchema,
+  SearchParseRequestSchema,
+  SearchParseResponseSchema,
+  SortColumnSchema,
+  isEmptyFilter,
+  type OrgLevel,
+  type SearchFilter,
+  type SearchParseRequest,
+  type SearchParseResponse,
+} from './search.js';

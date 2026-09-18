@@ -1,8 +1,19 @@
+import type { SearchFilter } from '@org/contracts';
+
 import { createStore, useStore } from '@/shared/lib/createStore';
 
 export type PanelView = 'table' | 'tree';
 
+export type AiSearchState =
+  | { status: 'idle' }
+  | { status: 'parsing' }
+  /** Запрос разобран моделью — работает структурированный фильтр. */
+  | { status: 'applied'; filter: SearchFilter }
+  /** Разбора не было: показываем причину и остаёмся на текстовом поиске. */
+  | { status: 'fallback'; reason: string };
+
 export interface DashboardState {
+  ai: AiSearchState;
   /** Панель, которой достаются стрелки, когда фокуса нет ни на чём. */
   keyboardPanel: PanelView;
   /** Мгновенное значение поля поиска; фильтрация идёт по отложенному. */
@@ -19,6 +30,7 @@ export interface DashboardState {
  * Серверных данных здесь нет — они живут в кэше react-query.
  */
 export const dashboardStore = createStore<DashboardState>({
+  ai: { status: 'idle' },
   keyboardPanel: 'table',
   query: '',
   selectedId: null,
@@ -32,8 +44,15 @@ export function claimKeyboard(panel: PanelView): void {
   );
 }
 
+/** Правка строки поиска сбрасывает разобранный фильтр: он относился к прежнему запросу. */
 export function setQuery(query: string): void {
-  dashboardStore.setState((prev) => (prev.query === query ? prev : { ...prev, query }));
+  dashboardStore.setState((prev) =>
+    prev.query === query ? prev : { ...prev, query, ai: { status: 'idle' } },
+  );
+}
+
+export function setAiState(ai: AiSearchState): void {
+  dashboardStore.setState((prev) => ({ ...prev, ai }));
 }
 
 export function selectNode(selectedId: string | null): void {
@@ -66,3 +85,5 @@ export const usePanelView = (): PanelView => useStore(dashboardStore, (state) =>
 
 export const useKeyboardPanel = (): PanelView =>
   useStore(dashboardStore, (state) => state.keyboardPanel);
+
+export const useAiSearch = (): AiSearchState => useStore(dashboardStore, (state) => state.ai);

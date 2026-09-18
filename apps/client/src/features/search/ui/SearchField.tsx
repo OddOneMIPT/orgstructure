@@ -1,13 +1,16 @@
-import { Search, X } from 'lucide-react';
+import { Search, Sparkles, X } from 'lucide-react';
+import { useEffect, useRef } from 'react';
 import styled from 'styled-components';
 
-import { setQuery, useQuery } from '@/shared/model/dashboardStore';
+import { parseSearchQuery } from '@/shared/api';
+import { setAiState, setQuery, useAiSearch, useQuery } from '@/shared/model/dashboardStore';
+import { Spinner } from '@/shared/ui';
 
 const Wrapper = styled.div`
   display: flex;
   align-items: center;
   gap: ${({ theme }) => theme.spacing.xs};
-  width: min(320px, 100%);
+  width: min(360px, 100%);
   padding: ${({ theme }) => `${theme.spacing.xs} ${theme.spacing.sm}`};
   border: 1px solid ${({ theme }) => theme.colors.border};
   border-radius: ${({ theme }) => theme.radii.sm};
@@ -16,6 +19,12 @@ const Wrapper = styled.div`
 
   &:focus-within {
     border-color: ${({ theme }) => theme.colors.accent};
+  }
+
+  /* Запрос разобран моделью — зелёная иконка, как в макете. */
+  &[data-ai='applied'] {
+    border-color: ${({ theme }) => theme.colors.status.ok};
+    color: ${({ theme }) => theme.colors.status.ok};
   }
 `;
 
@@ -53,30 +62,76 @@ const Clear = styled.button.attrs({ type: 'button' })`
 `;
 
 /**
- * Поле управляется мгновенным значением, а фильтрация идёт по отложенному (250 мс):
- * иначе ввод «залипал» бы на время задержки.
+ * Одна строка на оба режима: текстовый фильтр работает сразу (дебаунс 250 мс),
+ * а Enter отправляет запрос на разбор AI. Если разбора не случилось, поиск
+ * остаётся текстовым — см. ADR 007.
  */
 export function SearchField() {
   const query = useQuery();
+  const ai = useAiSearch();
+  const request = useRef<AbortController | null>(null);
+
+  useEffect(
+    () => () => {
+      request.current?.abort();
+    },
+    [],
+  );
+
+  const runAiParse = (): void => {
+    const text = query.trim();
+    if (text === '') return;
+
+    request.current?.abort();
+    const controller = new AbortController();
+    request.current = controller;
+
+    setAiState({ status: 'parsing' });
+
+    void parseSearchQuery(text, controller.signal)
+      .then((result) => {
+        if (controller.signal.aborted) return;
+
+        setAiState(
+          result.source === 'ai' && result.filter
+            ? { status: 'applied', filter: result.filter }
+            : { status: 'fallback', reason: result.reason ?? 'Запрос не разобран' },
+        );
+      })
+      .catch(() => {
+        if (controller.signal.aborted) return;
+        setAiState({ status: 'fallback', reason: 'Сервис поиска недоступен' });
+      });
+  };
 
   return (
-    <Wrapper>
-      <Search size={15} aria-hidden />
+    <Wrapper data-ai={ai.status}>
+      {ai.status === 'parsing' ? <Spinner size={15} /> : null}
+      {ai.status === 'applied' ? <Sparkles size={15} aria-hidden /> : null}
+      {ai.status === 'parsing' || ai.status === 'applied' ? null : <Search size={15} aria-hidden />}
+
       <Input
         type="search"
         value={query}
-        placeholder="Поиск по названию"
-        aria-label="Поиск подразделения по названию"
+        placeholder="Поиск или запрос: «отделы с бюджетом больше 50 млн»"
+        aria-label="Поиск подразделения: по названию или запросом на естественном языке"
         onChange={(event) => {
           setQuery(event.target.value);
         }}
         onKeyDown={(event) => {
-          // Escape очищает запрос, не убирая фокус из поля.
-          if (event.key !== 'Escape') return;
-          event.preventDefault();
-          setQuery('');
+          if (event.key === 'Escape') {
+            event.preventDefault();
+            setQuery('');
+            return;
+          }
+
+          if (event.key === 'Enter') {
+            event.preventDefault();
+            runAiParse();
+          }
         }}
       />
+
       {query === '' ? null : (
         <Clear
           aria-label="Очистить поиск"

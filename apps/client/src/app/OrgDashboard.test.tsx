@@ -55,6 +55,7 @@ beforeEach(() => {
   fetchOrgTreeMock.mockReset();
   treeUiStore.setState(() => ({ expanded: new Set(), initializedFor: null }));
   dashboardStore.setState(() => ({
+    ai: { status: 'idle' },
     keyboardPanel: 'table',
     query: '',
     selectedId: null,

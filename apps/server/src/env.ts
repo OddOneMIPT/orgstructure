@@ -12,12 +12,23 @@ const EnvSchema = z.object({
   MOCK_DEBUG: booleanish,
   /** Период имитации живых данных; 0 выключает тикер. */
   TICK_INTERVAL_MS: z.coerce.number().int().min(0).max(600_000).default(3_000),
+
+  /** Без ключа AI-поиск честно откатывается на текстовый (ADR 007). */
+  ANTHROPIC_API_KEY: z.string().min(1).optional(),
+  /** Разбор короткой строки; `output_config.effort` поддерживают модели 4.6+ (ADR 007). */
+  AI_MODEL: z.string().min(1).default('claude-sonnet-5'),
+  AI_TIMEOUT_MS: z.coerce.number().int().min(500).max(60_000).default(8_000),
 });
 
 export type Env = z.infer<typeof EnvSchema>;
 
 export function parseEnv(source: NodeJS.ProcessEnv = process.env): Env {
-  const result = EnvSchema.safeParse(source);
+  // Пустая строка — это «не задано», а не значение. docker compose всегда подставляет
+  // переменную (`${ANTHROPIC_API_KEY:-}`), и `.env` из примера тоже оставляет её пустой:
+  // без этой очистки сервер падал бы на старте там, где ключа просто нет.
+  const defined = Object.fromEntries(Object.entries(source).filter(([, value]) => value !== ''));
+
+  const result = EnvSchema.safeParse(defined);
 
   if (!result.success) {
     const details = result.error.issues

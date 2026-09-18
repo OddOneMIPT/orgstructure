@@ -72,6 +72,7 @@ const header = (label: string | RegExp) =>
 beforeEach(() => {
   tableUiStore.setState(() => ({ sort: null }));
   dashboardStore.setState(() => ({
+    ai: { status: 'idle' },
     keyboardPanel: 'table',
     query: '',
     selectedId: null,

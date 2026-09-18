@@ -58,6 +58,7 @@ const isHidden = (name: string): boolean => rowOf(name).closest('[aria-hidden="t
 beforeEach(() => {
   treeUiStore.setState(() => ({ expanded: new Set(), initializedFor: null }));
   dashboardStore.setState(() => ({
+    ai: { status: 'idle' },
     keyboardPanel: 'table',
     query: '',
     selectedId: null,
