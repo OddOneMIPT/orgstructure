@@ -120,6 +120,21 @@ export function OrgTree({ model, view }: OrgTreeProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const roots = useMemo(() => model.roots.filter((id) => isVisible(view, id)), [model.roots, view]);
+  const treeRef = useRef<HTMLDivElement>(null);
+
+  /**
+   * «Развернуть/свернуть все» выполняются без анимации: десятки вложенных анимируемых
+   * grid-контейнеров пересчитывают layout каждый кадр, причём внешние анимируются
+   * к цели, которая сама ещё меняется (ADR 005).
+   */
+  const withoutAnimation = (action: () => void): void => {
+    const node = treeRef.current;
+    node?.setAttribute('data-animate', 'off');
+    action();
+    requestAnimationFrame(() => {
+      node?.removeAttribute('data-animate');
+    });
+  };
   const context = useMemo(() => ({ model, view, query }), [model, view, query]);
 
   /**
@@ -186,17 +201,25 @@ export function OrgTree({ model, view }: OrgTreeProps) {
 
   return (
     <OrgTreeContext.Provider value={context}>
-      <TreePanel aria-label="Дерево орг-структуры">
+      <TreePanel aria-label="Дерево орг-структуры" ref={treeRef}>
         <Header>
           <Title>Дерево орг-структуры</Title>
           <Actions>
-            <Button $variant="ghost" onClick={collapseAll} disabled={expandedCount === 0}>
+            <Button
+              $variant="ghost"
+              disabled={expandedCount === 0}
+              onClick={() => {
+                withoutAnimation(collapseAll);
+              }}
+            >
               Свернуть все
             </Button>
             <Button
               $variant="ghost"
               onClick={() => {
-                expandAll(model);
+                withoutAnimation(() => {
+                  expandAll(model);
+                });
               }}
             >
               Развернуть все

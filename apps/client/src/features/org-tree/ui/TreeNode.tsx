@@ -103,12 +103,33 @@ const Staff = styled.span`
 `;
 
 /**
+ * Анимация раскрытия: `grid-template-rows: 0fr → 1fr` — настоящий переход высоты
+ * без измерений DOM. Обёртке обязателен `min-height: 0`, иначе grid-элемент не
+ * сжимается ниже min-content и приём молча не работает; padding/margin/border
+ * у неё нулевые, чтобы в свёрнутом состоянии не оставалась полоска (ADR 005).
+ */
+const GroupWrapper = styled.div`
+  display: grid;
+  grid-template-rows: 0fr;
+
+  &[data-open='true'] {
+    grid-template-rows: 1fr;
+  }
+
+  ${motion`
+    transition: grid-template-rows ${({ theme }) => theme.timing.base} ${({ theme }) => theme.easing};
+  `}
+`;
+
+/**
  * Вложенная группа без собственного отступа: сдвигает только ячейка имени.
  * `display: contents` здесь не используется — он способен выкинуть роль из дерева доступности.
  */
 const Group = styled.ul`
+  min-height: 0;
   margin: 0;
   padding: 0;
+  overflow: hidden;
 `;
 
 export interface TreeNodeProps {
@@ -205,12 +226,20 @@ export const TreeNode = memo(function TreeNode({ id, depth, rovingProps }: TreeN
         </Staff>
       </Row>
 
-      {hasChildren && isExpanded ? (
-        <Group role="group">
-          {children.map((childId) => (
-            <TreeNode key={childId} id={childId} depth={depth + 1} rovingProps={rovingProps} />
-          ))}
-        </Group>
+      {hasChildren ? (
+        /**
+         * Свёрнутая ветка остаётся в разметке ради анимации, поэтому её содержимое
+         * помечается `inert` — синхронно из состояния, а не по `transitionend`:
+         * это событие не приходит ни при reduced-motion, ни во вложенной свёрнутой
+         * ветке, ни в jsdom, и скрытые узлы навсегда остались бы фокусируемыми.
+         */
+        <GroupWrapper data-open={isExpanded} aria-hidden={!isExpanded}>
+          <Group role="group" {...(isExpanded ? {} : { inert: true })}>
+            {children.map((childId) => (
+              <TreeNode key={childId} id={childId} depth={depth + 1} rovingProps={rovingProps} />
+            ))}
+          </Group>
+        </GroupWrapper>
       ) : null}
     </li>
   );

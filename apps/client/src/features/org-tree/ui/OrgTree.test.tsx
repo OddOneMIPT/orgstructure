@@ -39,6 +39,12 @@ const renderTree = () =>
 
 const rowOf = (name: string): HTMLElement => screen.getByText(name).closest('li')!;
 
+/** Свёрнутая ветка остаётся в разметке ради анимации, поэтому смотрим на состояние, а не на наличие. */
+const isOpen = (name: string): boolean => rowOf(name).getAttribute('aria-expanded') === 'true';
+
+/** Узел внутри свёрнутой ветки скрыт от скринридера и недоступен для фокуса. */
+const isHidden = (name: string): boolean => rowOf(name).closest('[aria-hidden="true"]') !== null;
+
 beforeEach(() => {
   treeUiStore.setState(() => ({ expanded: new Set(), initializedFor: null }));
   dashboardStore.setState(() => ({ query: '', selectedId: null, view: 'table' }));
@@ -48,9 +54,9 @@ describe('OrgTree', () => {
   it('по умолчанию показывает два уровня: дивизион и отдел', () => {
     renderTree();
 
-    expect(screen.getByText('Технологии')).toBeInTheDocument();
-    expect(screen.getByText('Инфраструктура')).toBeInTheDocument();
-    expect(screen.queryByText('Облако')).not.toBeInTheDocument();
+    expect(isOpen('Технологии')).toBe(true);
+    expect(isOpen('Инфраструктура')).toBe(false);
+    expect(isHidden('Облако')).toBe(true);
   });
 
   it('раскрывает ветку кликом по строке, а не только по шеврону', async () => {
@@ -59,7 +65,8 @@ describe('OrgTree', () => {
 
     await user.click(screen.getByText('Инфраструктура'));
 
-    expect(screen.getByText('Облако')).toBeInTheDocument();
+    expect(isOpen('Инфраструктура')).toBe(true);
+    expect(isHidden('Облако')).toBe(false);
   });
 
   it('повторный клик по строке сворачивает ветку', async () => {
@@ -69,7 +76,8 @@ describe('OrgTree', () => {
     await user.click(screen.getByText('Инфраструктура'));
     await user.click(screen.getByText('Инфраструктура'));
 
-    expect(screen.queryByText('Облако')).not.toBeInTheDocument();
+    expect(isOpen('Инфраструктура')).toBe(false);
+    expect(isHidden('Облако')).toBe(true);
   });
 
   it('клик по шеврону переключает ветку ровно один раз', async () => {
@@ -81,7 +89,7 @@ describe('OrgTree', () => {
     });
     await user.click(chevron);
 
-    expect(screen.getByText('Облако')).toBeInTheDocument();
+    expect(isOpen('Инфраструктура')).toBe(true);
   });
 
   it('у листа нет кнопки раскрытия и aria-expanded', async () => {
@@ -99,10 +107,12 @@ describe('OrgTree', () => {
     renderTree();
 
     await user.click(screen.getByRole('button', { name: 'Развернуть все' }));
-    expect(screen.getByText('Облако')).toBeInTheDocument();
+    expect(isOpen('Инфраструктура')).toBe(true);
+    expect(isHidden('Облако')).toBe(false);
 
     await user.click(screen.getByRole('button', { name: 'Свернуть все' }));
-    expect(screen.queryByText('Инфраструктура')).not.toBeInTheDocument();
+    expect(isOpen('Технологии')).toBe(false);
+    expect(isHidden('Инфраструктура')).toBe(true);
   });
 
   it('размечен как WAI-ARIA дерево с уровнями', () => {
@@ -129,10 +139,10 @@ describe('OrgTree', () => {
 
       rowOf('Инфраструктура').focus();
       await user.keyboard('{ArrowRight}');
-      expect(screen.getByText('Облако')).toBeInTheDocument();
+      expect(isOpen('Инфраструктура')).toBe(true);
 
       await user.keyboard('{ArrowLeft}');
-      expect(screen.queryByText('Облако')).not.toBeInTheDocument();
+      expect(isOpen('Инфраструктура')).toBe(false);
     });
 
     it('стрелка влево на свёрнутом узле уводит к родителю', async () => {
@@ -166,5 +176,23 @@ describe('OrgTree', () => {
 
       expect(dashboardStore.getState().selectedId).toBe('dep');
     });
+  });
+
+  it('свёрнутая ветка помечена inert — её узлы не ловят фокус', () => {
+    renderTree();
+
+    const group = rowOf('Облако').closest('ul[role="group"]');
+    expect(group).toHaveAttribute('inert');
+  });
+
+  it('раскрытая ветка снимает inert и aria-hidden', async () => {
+    const user = userEvent.setup();
+    renderTree();
+
+    await user.click(screen.getByText('Инфраструктура'));
+
+    const group = rowOf('Облако').closest('ul[role="group"]');
+    expect(group).not.toHaveAttribute('inert');
+    expect(isHidden('Облако')).toBe(false);
   });
 });
