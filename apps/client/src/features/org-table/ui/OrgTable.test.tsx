@@ -89,7 +89,7 @@ describe('OrgTable', () => {
     const row = screen.getByText('Технологии').closest('tr')!;
 
     // 4 + 3 + 10 человек и 9 + 7 + 2 млн.
-    expect(normalizeSpaces(row.textContent ?? '')).toContain('4 / 17');
+    expect(row.querySelectorAll('td')[2]?.textContent).toBe('17');
     expect(normalizeSpaces(row.textContent ?? '')).toContain('18 000 000 руб.');
   });
 

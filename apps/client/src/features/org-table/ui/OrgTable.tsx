@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import styled from 'styled-components';
 
 import { performanceTone, splitByMatch, type FilteredView, type OrgModel } from '@/entities/org';
-import { describeStaff, formatBudget, formatStaff, levelLabel } from '@/shared/lib/format';
+import { describeStaff, formatBudget, formatCount, levelLabel } from '@/shared/lib/format';
 import { selectNode, useQuery, useSelectedId } from '@/shared/model/dashboardStore';
 import { Button, Panel, PerformanceBar, StateMessage } from '@/shared/ui';
 
@@ -189,11 +189,13 @@ export function OrgTable({ model, view }: OrgTableProps) {
                     )}
                   </NameCell>
                   <Level>{levelLabel(row.depth)}</Level>
+                  {/* Колонка так и называется — «Всего сотрудников»: здесь только сумма
+                      по поддереву. Разбивка «своих / всего» осталась в дереве. */}
                   <td
                     data-align="right"
                     title={describeStaff(row.ownHeadcount, row.aggregate.headcount)}
                   >
-                    {formatStaff(row.ownHeadcount, row.aggregate.headcount)}
+                    {formatCount(row.aggregate.headcount)}
                   </td>
                   <td data-align="right">{formatBudget(row.aggregate.budget)}</td>
                   <PerformanceCell>
